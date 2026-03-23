@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/PaperWise_AJT">
+    
+    <Resource name="jdbc/paperwise"
+              auth="Container"
+              type="javax.sql.DataSource"
+              driverClassName="org.postgresql.Driver"
+              url="jdbc:postgresql://localhost:5432/paperwise_db"
+              username="postgres"
+              password="postgres"
+              maxTotal="20"
+              maxIdle="10"
+              maxWaitMillis="10000"
+              removeAbandonedOnBorrow="true"
+              removeAbandonedTimeout="60"
+              logAbandoned="true"
+              testOnBorrow="true"
+              validationQuery="SELECT 1"/>
+    
+</Context>
