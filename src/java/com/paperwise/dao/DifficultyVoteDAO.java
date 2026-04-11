@@ -16,20 +16,20 @@ public class DifficultyVoteDAO {
 
     private static final String JNDI_DATASOURCE = "java:comp/env/jdbc/paperwise";
 
-    private static final String SQL_UPSERT_DIFFICULTY_VOTE =
-            "INSERT INTO difficulty_votes (paper_id, user_id, difficulty_level) " +
-            "VALUES (?, ?, ?) " +
-            "ON CONFLICT (paper_id, user_id) " +
-            "DO UPDATE SET difficulty_level = EXCLUDED.difficulty_level";
+    private static final String SQL_UPSERT_DIFFICULTY_VOTE
+            = "INSERT INTO difficulty_votes (paper_id, user_id, difficulty_level) "
+            + "VALUES (?, ?, ?) "
+            + "ON CONFLICT (paper_id, user_id) "
+            + "DO UPDATE SET difficulty_level = EXCLUDED.difficulty_level";
 
-    private static final String SQL_GET_DIFFICULTY_STATS =
-            "SELECT difficulty_level, COUNT(*) as count " +
-            "FROM difficulty_votes WHERE paper_id = ? " +
-            "GROUP BY difficulty_level";
+    private static final String SQL_GET_DIFFICULTY_STATS
+            = "SELECT difficulty_level, COUNT(*) as count "
+            + "FROM difficulty_votes WHERE paper_id = ? "
+            + "GROUP BY difficulty_level";
 
-    private static final String SQL_GET_USER_DIFFICULTY_VOTE =
-            "SELECT difficulty_level FROM difficulty_votes " +
-            "WHERE paper_id = ? AND user_id = ?";
+    private static final String SQL_GET_USER_DIFFICULTY_VOTE
+            = "SELECT difficulty_level FROM difficulty_votes "
+            + "WHERE paper_id = ? AND user_id = ?";
 
     private DataSource dataSource;
 
@@ -42,8 +42,8 @@ public class DifficultyVoteDAO {
                 System.err.println("JNDI lookup failed for resource: " + JNDI_DATASOURCE);
                 e.printStackTrace();
                 throw new DAOException(
-                        "Unable to locate DataSource via JNDI. " +
-                        "Verify that '" + JNDI_DATASOURCE + "' is declared in context.xml.", e);
+                        "Unable to locate DataSource via JNDI. "
+                        + "Verify that '" + JNDI_DATASOURCE + "' is declared in context.xml.", e);
             }
         }
         return dataSource;
@@ -63,8 +63,7 @@ public class DifficultyVoteDAO {
                     "Invalid difficulty level. Must be one of: easy, medium, hard");
         }
 
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_UPSERT_DIFFICULTY_VOTE)) {
+        try (Connection connection = getDataSource().getConnection(); PreparedStatement statement = connection.prepareStatement(SQL_UPSERT_DIFFICULTY_VOTE)) {
 
             statement.setInt(1, paperId);
             statement.setInt(2, userId);
@@ -73,13 +72,13 @@ public class DifficultyVoteDAO {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                System.out.println("Difficulty vote added/updated for paper ID " + paperId +
-                                   " by user ID " + userId + ": " + normalizedLevel);
+                System.out.println("Difficulty vote added/updated for paper ID " + paperId
+                        + " by user ID " + userId + ": " + normalizedLevel);
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while adding/updating difficulty vote for paper ID: " +
-                               paperId + ", user ID: " + userId);
+            System.err.println("Database error while adding/updating difficulty vote for paper ID: "
+                    + paperId + ", user ID: " + userId);
             e.printStackTrace();
             throw new DAOException("Failed to add or update difficulty vote.", e);
         }
@@ -93,8 +92,7 @@ public class DifficultyVoteDAO {
 
         Map<String, Integer> stats = new HashMap<>();
 
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_GET_DIFFICULTY_STATS)) {
+        try (Connection connection = getDataSource().getConnection(); PreparedStatement statement = connection.prepareStatement(SQL_GET_DIFFICULTY_STATS)) {
 
             statement.setInt(1, paperId);
 
@@ -122,8 +120,7 @@ public class DifficultyVoteDAO {
 
         DifficultyStats stats = new DifficultyStats();
 
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_GET_DIFFICULTY_STATS)) {
+        try (Connection connection = getDataSource().getConnection(); PreparedStatement statement = connection.prepareStatement(SQL_GET_DIFFICULTY_STATS)) {
 
             statement.setInt(1, paperId);
 
@@ -162,8 +159,7 @@ public class DifficultyVoteDAO {
             throw new IllegalArgumentException("Paper ID and User ID must be positive integers.");
         }
 
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_GET_USER_DIFFICULTY_VOTE)) {
+        try (Connection connection = getDataSource().getConnection(); PreparedStatement statement = connection.prepareStatement(SQL_GET_USER_DIFFICULTY_VOTE)) {
 
             statement.setInt(1, paperId);
             statement.setInt(2, userId);
@@ -175,8 +171,8 @@ public class DifficultyVoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting user difficulty vote for paper ID: " +
-                               paperId + ", user ID: " + userId);
+            System.err.println("Database error while getting user difficulty vote for paper ID: "
+                    + paperId + ", user ID: " + userId);
             e.printStackTrace();
             throw new DAOException("Failed to retrieve user difficulty vote.", e);
         }
@@ -185,9 +181,9 @@ public class DifficultyVoteDAO {
     }
 
     private boolean isValidDifficultyLevel(String level) {
-        return "Easy".equalsIgnoreCase(level) ||
-               "Medium".equalsIgnoreCase(level) ||
-               "Hard".equalsIgnoreCase(level);
+        return "Easy".equalsIgnoreCase(level)
+                || "Medium".equalsIgnoreCase(level)
+                || "Hard".equalsIgnoreCase(level);
     }
 
     public static class DAOException extends RuntimeException {

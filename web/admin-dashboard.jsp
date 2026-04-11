@@ -225,6 +225,9 @@
                             <th>Year</th>
                             <th>Chapter</th>
                             <th>Uploaded By</th>
+                            <th>Useful Votes</th>
+                            <th>Difficulty</th>
+                            <th>Avg Score</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -236,6 +239,18 @@
                             <td><%= paper.getYear() %></td>
                             <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
                             <td><%= paper.getUploaderUsername() != null ? paper.getUploaderUsername() : "Unknown" %></td>
+                            <td><%= paper.getUsefulCount() %></td>
+                            <td title="Easy: <%= paper.getEasyCount() %>, Medium: <%= paper.getMediumCount() %>, Hard: <%= paper.getHardCount() %>">
+                                <%= paper.getDifficultyLabel() != null ? paper.getDifficultyLabel() : "Not Rated" %>
+                            </td>
+                            <td>
+                                <% double avg = paper.getAverageDifficultyScore();
+                                   if (avg > 0) { %>
+                                    <%= String.format("%.1f", avg) %>/3
+                                <% } else { %>
+                                    -
+                                <% } %>
+                            </td>
                             <td>
                                 <div class="action-buttons">
                                     <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>" 

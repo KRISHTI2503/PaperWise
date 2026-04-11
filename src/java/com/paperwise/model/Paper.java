@@ -199,6 +199,16 @@ public class Paper {
         difficultyLabel = "Mixed";
     }
 
+    /**
+     * Returns a weighted average difficulty score: easy=1, medium=2, hard=3.
+     * Returns 0.0 if no difficulty votes exist.
+     */
+    public double getAverageDifficultyScore() {
+        int total = easyCount + mediumCount + hardCount;
+        if (total == 0) return 0.0;
+        return (easyCount * 1.0 + mediumCount * 2.0 + hardCount * 3.0) / total;
+    }
+
     public boolean isPopular() {
         return usefulCount >= POPULAR_THRESHOLD;
     }

@@ -59,7 +59,7 @@ public class AdminDashboardServlet extends HttpServlet {
         }
 
         try {
-            List<Paper> papers = paperDAO.getAllPapers();
+            List<Paper> papers = paperDAO.getAllPapersWithVotes();
             request.setAttribute("papers", papers);
             LOGGER.log(Level.INFO, "Admin dashboard loaded with {0} papers.", papers.size());
             request.getRequestDispatcher(VIEW_ADMIN_DASHBOARD).forward(request, response);
