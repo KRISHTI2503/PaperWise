@@ -63,6 +63,28 @@ public class PaperDAO {
             "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ? " +
             "WHERE paper_id = ?";
 
+    private static final String SQL_FIND_ALL_PAPERS_WITH_STATS =
+            "SELECT p.*, " +
+            "       u.username, " +
+            "       COUNT(DISTINCT v.id)                                          AS total_votes, " +
+            "       COUNT(DISTINCT d.id)                                          AS total_difficulty_votes, " +
+            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'easy')   AS easy_count, " +
+            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'medium') AS medium_count, " +
+            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'hard')   AS hard_count, " +
+            "       CASE WHEN COUNT(DISTINCT d.id) = 0 THEN 0.0 " +
+            "            ELSE ROUND((" +
+            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'easy')   * 1.0 + " +
+            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'medium') * 2.0 + " +
+            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'hard')   * 3.0 " +
+            "            ) / COUNT(DISTINCT d.id), 2) " +
+            "       END AS avg_difficulty_score " +
+            "FROM papers p " +
+            "LEFT JOIN users u ON p.uploaded_by = u.user_id " +
+            "LEFT JOIN votes v ON p.paper_id = v.paper_id " +
+            "LEFT JOIN difficulty_votes d ON p.paper_id = d.paper_id " +
+            "GROUP BY p.paper_id, u.username " +
+            "ORDER BY total_votes DESC, p.created_at DESC";
+
     private static final String SQL_GET_DISTINCT_YEARS =
             "SELECT DISTINCT year FROM papers ORDER BY year DESC";
 
@@ -192,6 +214,33 @@ public class PaperDAO {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Database error while fetching papers with votes.", e);
             throw new DAOException("Failed to retrieve papers with votes.", e);
+        }
+
+        return papers;
+    }
+
+    public List<Paper> getAllPapersWithStats() {
+        List<Paper> papers = new ArrayList<>();
+
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL_PAPERS_WITH_STATS);
+             ResultSet rs = statement.executeQuery()) {
+
+            while (rs.next()) {
+                Paper paper = mapRow(rs);
+                paper.setUploaderUsername(rs.getString("username"));
+                paper.setUsefulCount(rs.getInt("total_votes"));
+                paper.setEasyCount(rs.getInt("easy_count"));
+                paper.setMediumCount(rs.getInt("medium_count"));
+                paper.setHardCount(rs.getInt("hard_count"));
+                paper.setAvgDifficultyScore(rs.getDouble("avg_difficulty_score"));
+                paper.calculateDifficulty();
+                papers.add(paper);
+            }
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while fetching papers with stats.", e);
+            throw new DAOException("Failed to retrieve papers with stats.", e);
         }
 
         return papers;

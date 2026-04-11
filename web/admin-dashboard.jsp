@@ -244,9 +244,9 @@
                                 <%= paper.getDifficultyLabel() != null ? paper.getDifficultyLabel() : "Not Rated" %>
                             </td>
                             <td>
-                                <% double avg = paper.getAverageDifficultyScore();
+                                <% double avg = paper.getAvgDifficultyScore();
                                    if (avg > 0) { %>
-                                    <%= String.format("%.1f", avg) %>/3
+                                    <%= String.format("%.2f", avg) %>/3
                                 <% } else { %>
                                     -
                                 <% } %>

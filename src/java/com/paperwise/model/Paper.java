@@ -22,6 +22,7 @@ public class Paper {
     private int mediumCount;
     private int hardCount;
     private String difficultyLabel;
+    private double avgDifficultyScore;
 
     public Paper() {}
 
@@ -197,6 +198,14 @@ public class Paper {
         }
 
         difficultyLabel = "Mixed";
+    }
+
+    public double getAvgDifficultyScore() {
+        return avgDifficultyScore;
+    }
+
+    public void setAvgDifficultyScore(double avgDifficultyScore) {
+        this.avgDifficultyScore = avgDifficultyScore;
     }
 
     /**
