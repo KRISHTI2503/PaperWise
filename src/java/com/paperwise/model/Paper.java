@@ -17,12 +17,14 @@ public class Paper {
     private String uploaderUsername;
     private int voteCount;
     private int usefulCount;
+    private int totalVotes;
     private boolean alreadyMarked;
     private int easyCount;
     private int mediumCount;
     private int hardCount;
     private String difficultyLabel;
-    private double avgDifficultyScore;
+    private double avgDifficultyScore; // stored value from DB
+    private double avgDifficulty;      // alias used by stats layer
 
     public Paper() {}
 
@@ -198,6 +200,22 @@ public class Paper {
         }
 
         difficultyLabel = "Mixed";
+    }
+
+    public int getTotalVotes() {
+        return totalVotes;
+    }
+
+    public void setTotalVotes(int totalVotes) {
+        this.totalVotes = totalVotes;
+    }
+
+    public double getAvgDifficulty() {
+        return avgDifficulty;
+    }
+
+    public void setAvgDifficulty(double avgDifficulty) {
+        this.avgDifficulty = avgDifficulty;
     }
 
     public double getAvgDifficultyScore() {

@@ -230,10 +230,12 @@ public class PaperDAO {
                 Paper paper = mapRow(rs);
                 paper.setUploaderUsername(rs.getString("username"));
                 paper.setUsefulCount(rs.getInt("total_votes"));
+                paper.setTotalVotes(rs.getInt("total_votes"));
                 paper.setEasyCount(rs.getInt("easy_count"));
                 paper.setMediumCount(rs.getInt("medium_count"));
                 paper.setHardCount(rs.getInt("hard_count"));
                 paper.setAvgDifficultyScore(rs.getDouble("avg_difficulty_score"));
+                paper.setAvgDifficulty(rs.getDouble("avg_difficulty_score"));
                 paper.calculateDifficulty();
                 papers.add(paper);
             }
