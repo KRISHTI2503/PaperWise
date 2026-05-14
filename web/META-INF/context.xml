@@ -7,7 +7,7 @@
               driverClassName="org.postgresql.Driver"
               url="jdbc:postgresql://localhost:5432/paperwise_db"
               username="postgres"
-              password="postgres"
+              password="password"
               maxTotal="20"
               maxIdle="10"
               maxWaitMillis="10000"

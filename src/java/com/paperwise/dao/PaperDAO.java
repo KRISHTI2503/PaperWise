@@ -22,8 +22,8 @@ public class PaperDAO {
     private static final String JNDI_DATASOURCE = "java:comp/env/jdbc/paperwise";
 
     private static final String SQL_INSERT_PAPER =
-            "INSERT INTO papers (subject_name, subject_code, year, chapter, file_url, uploaded_by) " +
-            "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO papers (subject_name, subject_code, year, chapter, file_url, uploaded_by, exam_type) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_FIND_ALL_PAPERS =
             "SELECT p.paper_id, p.subject_name, p.subject_code, p.year, p.chapter, p.file_url, " +
@@ -60,33 +60,25 @@ public class PaperDAO {
             "DELETE FROM papers WHERE paper_id = ?";
 
     private static final String SQL_UPDATE_PAPER =
-            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ? " +
+            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ? " +
             "WHERE paper_id = ?";
 
-    private static final String SQL_FIND_ALL_PAPERS_WITH_STATS =
-            "SELECT p.*, " +
-            "       u.username, " +
-            "       COUNT(DISTINCT v.id)                                          AS total_votes, " +
-            "       COUNT(DISTINCT d.id)                                          AS total_difficulty_votes, " +
-            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'easy')   AS easy_count, " +
-            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'medium') AS medium_count, " +
-            "       COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'hard')   AS hard_count, " +
-            "       CASE WHEN COUNT(DISTINCT d.id) = 0 THEN 0.0 " +
-            "            ELSE ROUND((" +
-            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'easy')   * 1.0 + " +
-            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'medium') * 2.0 + " +
-            "              COUNT(DISTINCT d.id) FILTER (WHERE d.difficulty_level = 'hard')   * 3.0 " +
-            "            ) / COUNT(DISTINCT d.id), 2) " +
-            "       END AS avg_difficulty_score " +
-            "FROM papers p " +
-            "LEFT JOIN users u ON p.uploaded_by = u.user_id " +
-            "LEFT JOIN votes v ON p.paper_id = v.paper_id " +
-            "LEFT JOIN difficulty_votes d ON p.paper_id = d.paper_id " +
-            "GROUP BY p.paper_id, u.username " +
-            "ORDER BY total_votes DESC, p.created_at DESC";
+    private static final String SQL_UPDATE_PAPER_WITH_FILE =
+            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ?, file_url = ? " +
+            "WHERE paper_id = ?";
 
     private static final String SQL_GET_DISTINCT_YEARS =
             "SELECT DISTINCT year FROM papers ORDER BY year DESC";
+
+    private static final String SQL_COUNT_TOTAL_USEFUL_MARKS =
+            "SELECT COUNT(*) FROM votes";
+
+    private static final String SQL_GLOBAL_DIFFICULTY_STATS =
+            "SELECT " +
+            "  COUNT(*) FILTER (WHERE difficulty_level = 'easy')   AS easy_count, " +
+            "  COUNT(*) FILTER (WHERE difficulty_level = 'medium') AS medium_count, " +
+            "  COUNT(*) FILTER (WHERE difficulty_level = 'hard')   AS hard_count " +
+            "FROM difficulty_votes";
 
     private static final String SQL_FIND_PAPERS_BY_YEAR =
             "SELECT p.*, " +
@@ -157,6 +149,12 @@ public class PaperDAO {
             statement.setString(5, paper.getFileUrl());
             statement.setInt(6, paper.getUploadedBy());
 
+            if (paper.getExamType() != null && !paper.getExamType().isBlank()) {
+                statement.setString(7, paper.getExamType().trim());
+            } else {
+                statement.setNull(7, java.sql.Types.VARCHAR);
+            }
+
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -219,33 +217,12 @@ public class PaperDAO {
         return papers;
     }
 
+    /**
+     * Alias for {@link #getAllPapersWithVotes()}.
+     * Returns all papers with useful vote counts and difficulty stats.
+     */
     public List<Paper> getAllPapersWithStats() {
-        List<Paper> papers = new ArrayList<>();
-
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL_PAPERS_WITH_STATS);
-             ResultSet rs = statement.executeQuery()) {
-
-            while (rs.next()) {
-                Paper paper = mapRow(rs);
-                paper.setUploaderUsername(rs.getString("username"));
-                paper.setUsefulCount(rs.getInt("total_votes"));
-                paper.setTotalVotes(rs.getInt("total_votes"));
-                paper.setEasyCount(rs.getInt("easy_count"));
-                paper.setMediumCount(rs.getInt("medium_count"));
-                paper.setHardCount(rs.getInt("hard_count"));
-                paper.setAvgDifficultyScore(rs.getDouble("avg_difficulty_score"));
-                paper.setAvgDifficulty(rs.getDouble("avg_difficulty_score"));
-                paper.calculateDifficulty();
-                papers.add(paper);
-            }
-
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Database error while fetching papers with stats.", e);
-            throw new DAOException("Failed to retrieve papers with stats.", e);
-        }
-
-        return papers;
+        return getAllPapersWithVotes();
     }
 
     public int getVoteCount(int paperId) {
@@ -273,8 +250,38 @@ public class PaperDAO {
         return 0;
     }
 
-    public List<Integer> getDistinctYears() {
-        List<Integer> years = new ArrayList<>();
+    public int getTotalUsefulMarks() {
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_COUNT_TOTAL_USEFUL_MARKS);
+             ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) return resultSet.getInt(1);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while counting total useful marks.", e);
+            throw new DAOException("Failed to count total useful marks.", e);
+        }
+        return 0;
+    }
+
+    /** Returns int[3]: [easyCount, mediumCount, hardCount] across all papers. */
+    public int[] getGlobalDifficultyStats() {
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_GLOBAL_DIFFICULTY_STATS);
+             ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) {
+                return new int[]{
+                    resultSet.getInt("easy_count"),
+                    resultSet.getInt("medium_count"),
+                    resultSet.getInt("hard_count")
+                };
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while fetching global difficulty stats.", e);
+            throw new DAOException("Failed to fetch global difficulty stats.", e);
+        }
+        return new int[]{0, 0, 0};
+    }
+
+    public List<Integer> getDistinctYears() {        List<Integer> years = new ArrayList<>();
 
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_GET_DISTINCT_YEARS);
@@ -393,8 +400,11 @@ public class PaperDAO {
             throw new IllegalArgumentException("Year must be a positive integer.");
         }
 
+        boolean hasReplacementFile = paper.getFileUrl() != null && !paper.getFileUrl().isBlank();
+        String sql = hasReplacementFile ? SQL_UPDATE_PAPER_WITH_FILE : SQL_UPDATE_PAPER;
+
         try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_PAPER)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, paper.getSubjectName());
             statement.setString(2, paper.getSubjectCode());
@@ -406,7 +416,18 @@ public class PaperDAO {
                 statement.setNull(4, java.sql.Types.VARCHAR);
             }
 
-            statement.setInt(5, paper.getPaperId());
+            if (paper.getExamType() != null && !paper.getExamType().isBlank()) {
+                statement.setString(5, paper.getExamType().trim());
+            } else {
+                statement.setNull(5, java.sql.Types.VARCHAR);
+            }
+
+            if (hasReplacementFile) {
+                statement.setString(6, paper.getFileUrl());
+                statement.setInt(7, paper.getPaperId());
+            } else {
+                statement.setInt(6, paper.getPaperId());
+            }
 
             int rowsAffected = statement.executeUpdate();
 
@@ -447,6 +468,13 @@ public class PaperDAO {
         String uploaderUsername = resultSet.getString("username");
         if (uploaderUsername != null) {
             paper.setUploaderUsername(uploaderUsername);
+        }
+
+        // exam_type — read safely in case column not yet added to DB
+        try {
+            paper.setExamType(resultSet.getString("exam_type"));
+        } catch (SQLException ignored) {
+            // column doesn't exist yet — run add_exam_type_column.sql to fix
         }
 
         return paper;

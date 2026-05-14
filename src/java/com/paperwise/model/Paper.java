@@ -17,14 +17,12 @@ public class Paper {
     private String uploaderUsername;
     private int voteCount;
     private int usefulCount;
-    private int totalVotes;
     private boolean alreadyMarked;
     private int easyCount;
     private int mediumCount;
     private int hardCount;
     private String difficultyLabel;
-    private double avgDifficultyScore; // stored value from DB
-    private double avgDifficulty;      // alias used by stats layer
+    private String examType;
 
     public Paper() {}
 
@@ -178,6 +176,14 @@ public class Paper {
         this.difficultyLabel = difficultyLabel;
     }
 
+    public String getExamType() {
+        return examType;
+    }
+
+    public void setExamType(String examType) {
+        this.examType = examType;
+    }
+
     public void calculateDifficulty() {
         if (easyCount == 0 && mediumCount == 0 && hardCount == 0) {
             difficultyLabel = "Not Rated";
@@ -200,40 +206,6 @@ public class Paper {
         }
 
         difficultyLabel = "Mixed";
-    }
-
-    public int getTotalVotes() {
-        return totalVotes;
-    }
-
-    public void setTotalVotes(int totalVotes) {
-        this.totalVotes = totalVotes;
-    }
-
-    public double getAvgDifficulty() {
-        return avgDifficulty;
-    }
-
-    public void setAvgDifficulty(double avgDifficulty) {
-        this.avgDifficulty = avgDifficulty;
-    }
-
-    public double getAvgDifficultyScore() {
-        return avgDifficultyScore;
-    }
-
-    public void setAvgDifficultyScore(double avgDifficultyScore) {
-        this.avgDifficultyScore = avgDifficultyScore;
-    }
-
-    /**
-     * Returns a weighted average difficulty score: easy=1, medium=2, hard=3.
-     * Returns 0.0 if no difficulty votes exist.
-     */
-    public double getAverageDifficultyScore() {
-        int total = easyCount + mediumCount + hardCount;
-        if (total == 0) return 0.0;
-        return (easyCount * 1.0 + mediumCount * 2.0 + hardCount * 3.0) / total;
     }
 
     public boolean isPopular() {

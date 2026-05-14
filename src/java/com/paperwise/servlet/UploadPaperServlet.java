@@ -85,8 +85,9 @@ public class UploadPaperServlet extends HttpServlet {
 
         String subjectName = sanitise(request.getParameter("subjectName"));
         String subjectCode = sanitise(request.getParameter("subjectCode"));
-        String yearStr = sanitise(request.getParameter("year"));
-        String chapter = sanitise(request.getParameter("chapter"));
+        String yearStr     = sanitise(request.getParameter("year"));
+        String chapter     = sanitise(request.getParameter("chapter"));
+        String examType    = sanitise(request.getParameter("examType"));
 
         String validationError = validateInput(subjectName, subjectCode, yearStr);
         if (validationError != null) {
@@ -161,6 +162,7 @@ public class UploadPaperServlet extends HttpServlet {
 
             paper.setFileUrl(filePath);
             paper.setUploadedBy(loggedInUser.getUserId());
+            paper.setExamType(examType != null && !examType.isEmpty() ? examType : null);
 
             boolean success = paperDAO.savePaper(paper);
 
@@ -173,7 +175,7 @@ public class UploadPaperServlet extends HttpServlet {
                 session.setAttribute(ATTR_SUCCESS,
                         "Paper '" + subjectName + "' uploaded successfully!");
 
-                response.sendRedirect(request.getContextPath() + "/adminDashboard");
+                response.sendRedirect(request.getContextPath() + "/adminDashboard?uploaded=true");
                 return;
             } else {
                 File uploadedFile = new File(uploadPath + File.separator + uniqueFileName);

@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,6 +45,33 @@ public class UserDAO {
             "INSERT INTO users (username, email, password, role, created_at) " +
             "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
+    private static final String SQL_COUNT_STUDENTS =
+            "SELECT COUNT(*) FROM users WHERE role = 'student'";
+
+    private static final String SQL_FIND_ALL_STUDENTS =
+            "SELECT u.user_id, u.username, u.email, u.role, u.created_at, " +
+            "       COALESCE((SELECT COUNT(*) FROM votes v " +
+            "                 WHERE v.user_id = u.user_id), 0) AS useful_marks_given, " +
+            "       COALESCE((SELECT COUNT(*) FROM paper_requests pr " +
+            "                 WHERE pr.user_id = u.user_id), 0) AS requests_made " +
+            "FROM users u " +
+            "WHERE u.role = 'student' " +
+            "ORDER BY u.created_at DESC";
+
+    private static final String SQL_COUNT_ACTIVE_THIS_MONTH =
+            "SELECT COUNT(DISTINCT u.user_id) " +
+            "FROM users u " +
+            "WHERE u.role = 'student' " +
+            "  AND ( " +
+            "    EXISTS (SELECT 1 FROM votes v " +
+            "            WHERE v.user_id = u.user_id " +
+            "              AND DATE_TRUNC('month', CURRENT_DATE) <= CURRENT_DATE) " +
+            "    OR " +
+            "    EXISTS (SELECT 1 FROM paper_requests pr " +
+            "            WHERE pr.user_id = u.user_id " +
+            "              AND DATE_TRUNC('month', pr.requested_at) = DATE_TRUNC('month', CURRENT_DATE)) " +
+            "  )";
+
     private DataSource dataSource;
 
     private DataSource getDataSource() {
@@ -59,6 +88,70 @@ public class UserDAO {
             }
         }
         return dataSource;
+    }
+
+    public int getStudentCount() {
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_COUNT_STUDENTS);
+             ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) return resultSet.getInt(1);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while counting students.", e);
+            throw new DAOException("Failed to count students.", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Returns all student-role users with their useful marks given and requests made counts.
+     */
+    public List<User> getAllStudents() {
+        List<User> students = new ArrayList<>();
+
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL_STUDENTS);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                User user = new User();
+                user.setUserId(resultSet.getInt("user_id"));
+                user.setUsername(resultSet.getString("username"));
+                user.setEmail(resultSet.getString("email"));
+                user.setRole(resultSet.getString("role"));
+
+                java.sql.Timestamp createdAt = resultSet.getTimestamp("created_at");
+                if (createdAt != null) {
+                    user.setCreatedAt(createdAt.toLocalDateTime());
+                }
+
+                user.setUsefulMarksGiven(resultSet.getInt("useful_marks_given"));
+                user.setRequestsMade(resultSet.getInt("requests_made"));
+                students.add(user);
+            }
+
+            LOGGER.log(Level.INFO, "Retrieved {0} students.", students.size());
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while fetching all students.", e);
+            throw new DAOException("Failed to retrieve students.", e);
+        }
+
+        return students;
+    }
+
+    /**
+     * Returns count of students who have at least 1 vote OR 1 request in the current calendar month.
+     */
+    public int getActiveStudentsThisMonth() {
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_COUNT_ACTIVE_THIS_MONTH);
+             ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) return resultSet.getInt(1);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while counting active students this month.", e);
+            throw new DAOException("Failed to count active students.", e);
+        }
+        return 0;
     }
 
     public User getUserByUsername(String username) {

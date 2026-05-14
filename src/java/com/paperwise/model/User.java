@@ -10,6 +10,8 @@ public class User {
     private String password;
     private String role;
     private LocalDateTime createdAt;
+    private int usefulMarksGiven;
+    private int requestsMade;
 
     public User() {}
 
@@ -78,6 +80,22 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getUsefulMarksGiven() {
+        return usefulMarksGiven;
+    }
+
+    public void setUsefulMarksGiven(int usefulMarksGiven) {
+        this.usefulMarksGiven = usefulMarksGiven;
+    }
+
+    public int getRequestsMade() {
+        return requestsMade;
+    }
+
+    public void setRequestsMade(int requestsMade) {
+        this.requestsMade = requestsMade;
     }
 
     @Override

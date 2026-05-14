@@ -59,9 +59,13 @@ public class StudentDashboardServlet extends HttpServlet {
             return;
         }
 
+        if (!"student".equalsIgnoreCase(loggedInUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
         try {
             String yearParam = request.getParameter("year");
-
             List<Paper> papers;
 
             if (yearParam != null && !yearParam.trim().isEmpty() && !yearParam.equals("all")) {
@@ -71,12 +75,12 @@ public class StudentDashboardServlet extends HttpServlet {
                     request.setAttribute("selectedYear", year);
                 } catch (NumberFormatException e) {
                     papers = paperDAO.getAllPapersWithVotes();
-                    System.err.println("Invalid year parameter: " + yearParam);
                 }
             } else {
                 papers = paperDAO.getAllPapersWithVotes();
             }
 
+            // Mark which papers this user has already voted on
             Set<Integer> votedPapers = voteDAO.getUserVotedPapers(loggedInUser.getUserId());
             for (Paper paper : papers) {
                 if (votedPapers.contains(paper.getPaperId())) {
@@ -85,11 +89,21 @@ public class StudentDashboardServlet extends HttpServlet {
             }
             request.setAttribute("votedPapers", votedPapers);
 
+            // Stat card counts
+            int totalPapers      = paperDAO.getAllPapers().size();
+            int totalUsefulMarks = paperDAO.getTotalUsefulMarks();
+            int myMarksCount     = votedPapers.size();
+
+            request.setAttribute("totalPapers",      totalPapers);
+            request.setAttribute("totalUsefulMarks", totalUsefulMarks);
+            request.setAttribute("myMarksCount",     myMarksCount);
+
+            // Year filter support
             List<Integer> availableYears = paperDAO.getDistinctYears();
             request.setAttribute("availableYears", availableYears);
-
             request.setAttribute("papers", papers);
 
+            // My requests
             List<PaperRequest> myRequests = paperRequestDAO.getRequestsByUserId(loggedInUser.getUserId());
             request.setAttribute("myRequests", myRequests);
 
@@ -98,14 +112,12 @@ public class StudentDashboardServlet extends HttpServlet {
                 request.setAttribute("searchQuery", searchQuery.trim());
             }
 
-            System.out.println("Student dashboard loaded with " + papers.size() + " papers for user " + loggedInUser.getUsername());
-
             request.getRequestDispatcher(VIEW_STUDENT_DASHBOARD).forward(request, response);
 
         } catch (Exception e) {
-            System.err.println("Error fetching papers for student dashboard:");
+            System.err.println("Error loading student dashboard:");
             e.printStackTrace();
-            request.setAttribute("errorMessage", "Failed to load papers. Please try again.");
+            request.setAttribute("errorMessage", "Failed to load dashboard. Please try again.");
             request.getRequestDispatcher(VIEW_STUDENT_DASHBOARD).forward(request, response);
         }
     }

@@ -7,423 +7,507 @@
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%
     User loggedInUser = (User) session.getAttribute("loggedInUser");
-    if (loggedInUser == null) {
+    if (loggedInUser == null || !"student".equalsIgnoreCase(loggedInUser.getRole())) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    
-    @SuppressWarnings("unchecked")
-    List<Paper> papers = (List<Paper>) request.getAttribute("papers");
-    
-    @SuppressWarnings("unchecked")
-    Set<Integer> votedPapers = (Set<Integer>) request.getAttribute("votedPapers");
 
     @SuppressWarnings("unchecked")
+    List<Paper> papers = (List<Paper>) request.getAttribute("papers");
+    @SuppressWarnings("unchecked")
+    Set<Integer> votedPapers = (Set<Integer>) request.getAttribute("votedPapers");
+    @SuppressWarnings("unchecked")
     List<PaperRequest> myRequests = (List<PaperRequest>) request.getAttribute("myRequests");
-    
-    String searchQuery = (String) request.getAttribute("searchQuery");
-    
-    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    @SuppressWarnings("unchecked")
+    List<Integer> availableYears = (List<Integer>) request.getAttribute("availableYears");
+
+    int totalPapers      = request.getAttribute("totalPapers")      != null ? (int) request.getAttribute("totalPapers")      : 0;
+    int totalUsefulMarks = request.getAttribute("totalUsefulMarks") != null ? (int) request.getAttribute("totalUsefulMarks") : 0;
+    int myMarksCount     = request.getAttribute("myMarksCount")     != null ? (int) request.getAttribute("myMarksCount")     : 0;
+    Integer selectedYear = (Integer) request.getAttribute("selectedYear");
+    String searchQuery   = (String)  request.getAttribute("searchQuery");
+
+    String username = loggedInUser.getUsername();
+    String initials = username.length() >= 2
+        ? username.substring(0, 2).toUpperCase()
+        : username.toUpperCase();
+
+    String currentMonthYear = java.time.format.DateTimeFormatter
+        .ofPattern("MMM yyyy").format(java.time.LocalDate.now());
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - PaperWise</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f7f9fc;
             min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        .header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-            gap: 16px;
         }
-        .header-left h1 {
-            color: #1a202c;
-            margin-bottom: 8px;
-            font-size: 32px;
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px; min-width: 220px;
+            background: #0f1f2e;
+            min-height: 100vh;
+            position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
         }
-        .user-info {
-            color: #718096;
-            font-size: 14px;
+        .sidebar-logo {
+            display: flex; align-items: center; gap: 10px;
+            padding: 20px 18px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-        .success-message {
-            background: #e6ffed;
-            border-left: 4px solid #38a169;
-            color: #22543d;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            animation: slideDown 0.3s ease-out;
+        .logo-sq {
+            width: 34px; height: 34px; background: #1e3a5f;
+            border-radius: 9px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
         }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .logo-sq i { font-size: 15px; color: #fff; margin: 0; }
+        .logo-text .app-name { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .logo-text .app-sub  { font-size: 10px; color: rgba(255,255,255,0.4); }
+        .nav-section { padding: 14px 0 4px; }
+        .nav-label {
+            font-size: 10px; color: rgba(255,255,255,0.3);
+            letter-spacing: 0.8px; text-transform: uppercase;
+            padding: 0 18px 6px;
         }
-        .success-message::before {
-            content: "✓";
-            margin-right: 8px;
-            font-size: 18px;
-            font-weight: bold;
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px; margin: 1px 8px; border-radius: 8px;
+            font-size: 13px; color: rgba(255,255,255,0.55);
+            text-decoration: none; transition: background .15s, color .15s;
         }
-        .error-message {
-            background: #fee;
-            border-left: 4px solid #e53e3e;
-            color: #c53030;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            font-size: 14px;
+        .nav-item i { font-size: 13px; margin: 0; width: 16px; text-align: center; flex-shrink: 0; }
+        .nav-item:hover  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+        .nav-item.active { background: rgba(30,136,229,0.15); color: #42a5f5; }
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 12px 8px;
         }
-        .search-bar {
-            margin-bottom: 24px;
+        .user-row { display: flex; align-items: center; gap: 9px; padding: 6px 10px 10px; }
+        .avatar {
+            width: 32px; height: 32px; background: #1e3a5f;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 11px; font-weight: 700;
+            color: #fff; flex-shrink: 0;
         }
-        .search-bar input {
-            width: 100%;
-            max-width: 400px;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
+        .user-meta .u-name { font-size: 12px; font-weight: 700; color: #fff; }
+        .user-meta .u-role { font-size: 10px; color: rgba(255,255,255,0.35); }
+        .logout-btn {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 14px; border-radius: 8px;
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; color: rgba(255,100,100,0.7);
+            transition: background .15s, color .15s; text-align: left;
         }
-        .search-bar input:focus {
-            outline: none;
-            border-color: #667eea;
+        .logout-btn i { font-size: 13px; margin: 0; }
+        .logout-btn:hover { background: rgba(255,80,80,0.1); color: #ff6b6b; }
+
+        /* ── MAIN ── */
+        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .topbar {
+            background: #fff; height: 56px; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #e8edf2; flex-shrink: 0;
         }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-block;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
+        .topbar-title { font-size: 16px; font-weight: 600; color: #0d1b2a; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .pill-date {
+            background: #fff4e0; color: #854f0b; font-size: 11px;
+            padding: 4px 10px; border-radius: 20px;
+            display: flex; align-items: center; gap: 5px;
         }
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #2d3748;
+        .pill-date i { font-size: 11px; margin: 0; }
+        .bell-btn {
+            position: relative; width: 34px; height: 34px;
+            background: #f0f4f8; border: none; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #4f7396;
         }
-        .btn-secondary:hover {
-            background: #cbd5e0;
+        .bell-btn i { font-size: 14px; margin: 0; }
+        .content { padding: 20px 24px; flex: 1; }
+
+        /* ── ALERTS ── */
+        .alert-success {
+            background: #f0fff4; border: 1px solid #9ae6b4; color: #276749;
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 13px; display: flex; align-items: center; gap: 8px;
         }
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 13px;
+        .alert-error {
+            background: #fff0f0; border: 1px solid #f5c6cb; color: #c0392b;
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 13px; display: flex; align-items: center; gap: 8px;
         }
-        .btn-view {
-            background: #4299e1;
-            color: white;
+        .alert-success i, .alert-error i { font-size: 13px; margin: 0; flex-shrink: 0; }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; margin-bottom: 20px;
         }
-        .btn-view:hover {
-            background: #3182ce;
+        .stat-card {
+            background: #fff; border-radius: 12px; padding: 16px;
+            border: 1px solid #e8edf2; display: flex; align-items: center; gap: 14px;
         }
-        .btn-download {
-            background: #48bb78;
-            color: white;
+        .stat-icon {
+            width: 36px; height: 36px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .btn-download:hover {
-            background: #38a169;
+        .stat-icon i { font-size: 15px; margin: 0; }
+        .stat-icon.blue   { background: #eef2ff; color: #4338ca; }
+        .stat-icon.green  { background: #f0fdf4; color: #166534; }
+        .stat-icon.orange { background: #fff7ed; color: #9a3412; }
+        .stat-body .stat-num   { font-size: 22px; font-weight: 700; color: #0d1b2a; line-height: 1.1; }
+        .stat-body .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+        /* ── SECTION CARD ── */
+        .section-card {
+            background: #fff; border-radius: 12px;
+            border: 1px solid #e8edf2; overflow: hidden; margin-bottom: 20px;
         }
-        .btn-vote {
-            background: #48bb78;
-            color: white;
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; border-bottom: 1px solid #f0f4f8;
         }
-        .btn-vote:hover {
-            background: #38a169;
+        .section-header-left { display: flex; align-items: center; gap: 8px; }
+        .section-title { font-size: 14px; font-weight: 600; color: #0d1b2a; }
+        .count-pill {
+            font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500;
         }
-        .btn-voted {
-            background: #cbd5e0;
-            color: #718096;
-            cursor: not-allowed;
+        .count-pill.indigo { background: #eef2ff; color: #3730a3; }
+        .count-pill.amber  { background: #fff4e0; color: #854f0b; }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 18px; border-bottom: 1px solid #f0f4f8; flex-wrap: wrap;
         }
-        .papers-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        .search-input {
+            flex: 1; min-width: 180px; max-width: 320px;
+            border: 1.5px solid #e5e7eb; border-radius: 8px;
+            padding: 7px 12px 7px 32px; font-size: 13px; color: #111827;
+            background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+            outline: none; transition: border .18s;
         }
-        .papers-table th {
-            background: #f7fafc;
-            padding: 14px 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #2d3748;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 14px;
+        .search-input:focus { border-color: #3b82f6; background-color: #fff; }
+        .year-select {
+            border: 1.5px solid #e5e7eb; border-radius: 8px;
+            padding: 7px 28px 7px 10px; font-size: 13px; color: #374151;
+            background: #f9fafb; outline: none; cursor: pointer;
+            appearance: none; transition: border .18s;
         }
-        .papers-table td {
-            padding: 14px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #4a5568;
-            font-size: 14px;
+        .year-select:focus { border-color: #3b82f6; }
+
+        /* ── TABLE ── */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table thead tr { background: #f8fafc; }
+        .data-table th {
+            font-size: 11px; color: #6b7280; text-transform: uppercase;
+            letter-spacing: 0.5px; padding: 10px 18px; text-align: left;
+            border-bottom: 1px solid #e8edf2; font-weight: 600;
         }
-        .papers-table tr:hover {
-            background: #f7fafc;
+        .data-table td {
+            padding: 12px 18px; border-bottom: 1px solid #f0f4f8;
+            font-size: 13px; color: #1f2937;
         }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #718096;
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover td { background: #f0f7ff; }
+        .td-subject { font-weight: 600; color: #0d1b2a; }
+        .code-pill { background: #eef2ff; color: #3730a3; font-size: 11px; border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+        .year-pill  { background: #162636; color: #fff; font-size: 11px; border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+
+        /* Difficulty badge */
+        .diff-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+        .diff-badge i { font-size: 10px; margin: 0; }
+        .diff-easy   { background: #dcfce7; color: #166534; }
+        .diff-medium { background: #fef3c7; color: #92400e; }
+        .diff-hard   { background: #fee2e2; color: #991b1b; }
+        .diff-none   { background: #f3f4f6; color: #6b7280; }
+
+        /* Action buttons */
+        .action-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+        .act-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 10px; border-radius: 6px; font-size: 11px;
+            font-weight: 500; border: 1.5px solid transparent; cursor: pointer;
+            text-decoration: none; transition: opacity .15s, background .15s;
         }
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
+        .act-btn i { font-size: 10px; margin: 0; }
+        .act-btn:hover { opacity: 0.82; }
+        .act-view     { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .act-download { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .act-vote     { background: transparent; color: #374151; border-color: #d1d5db; }
+        .act-vote:hover { background: #f9fafb; }
+        .act-voted    { background: #f3f4f6; color: #9ca3af; border-color: transparent; cursor: not-allowed; }
+        .act-marked   { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; font-weight: 600; }
+        .act-easy     { background: #f0fdf4; color: #166534; border-color: transparent; }
+        .act-medium   { background: #fff7ed; color: #9a3412; border-color: transparent; }
+        .act-hard     { background: #fef2f2; color: #991b1b; border-color: transparent; }
+        .act-diff-selected { outline: 2px solid currentColor; outline-offset: 1px; font-weight: 700; }
+
+        /* Popular badge */
+        .pop-badge { background: #fff4e0; color: #854f0b; font-size: 10px; border-radius: 5px; padding: 2px 7px; font-weight: 500; margin-left: 5px; }
+
+        /* File-type badge */
+        .ft-badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.4px; border-radius: 4px; padding: 2px 5px; margin-right: 6px; vertical-align: middle; text-transform: uppercase; }
+        .ft-pdf  { background: #fee2e2; color: #991b1b; }
+        .ft-doc  { background: #dbeafe; color: #1e40af; }
+        .ft-ppt  { background: #ffedd5; color: #9a3412; }
+        .ft-img  { background: #d1fae5; color: #065f46; }
+        .ft-vid  { background: #ede9fe; color: #5b21b6; }
+        .ft-txt  { background: #f3f4f6; color: #374151; }
+        .ft-other{ background: #f3f4f6; color: #6b7280; }
+
+        /* Date cell */
+        .date-cell { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 48px 20px; color: #9ca3af; }
+        .empty-state i { font-size: 36px; margin: 0 0 10px; display: block; color: #d1d5db; }
+        .empty-state p { font-size: 13px; color: #9ca3af; }
+
+        /* Useful count — blue bold */
+        .useful-num { color: #1d4ed8; font-weight: 700; font-size: 13px; }
+
+        /* Requests table */
+        .status-pill { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+        .status-pill i { font-size: 10px; margin: 0; }
+        .s-pending   { background: #fff4e0; color: #854f0b; }
+        .s-approved  { background: #f0fdf4; color: #166534; }
+        .s-rejected  { background: #fef2f2; color: #991b1b; }
+        .s-completed { background: #eff6ff; color: #1d4ed8; }
+
+        .act-delete-sm { background: #fef2f2; color: #991b1b; }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
         }
-        .action-buttons {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+        @media (max-width: 560px) {
+            .stats-grid { grid-template-columns: 1fr; }
         }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        /* ── REQUEST PAPER BUTTON ── */
+        .btn-request-paper {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #1e3a5f; color: #fff; border: none;
+            border-radius: 8px; padding: 7px 14px; font-size: 12px;
+            font-weight: 500; cursor: pointer; transition: background .15s;
         }
-        .badge-popular {
-            background: #fef5e7;
-            color: #d97706;
+        .btn-request-paper i { font-size: 11px; margin: 0; }
+        .btn-request-paper:hover { background: #0d2a45; }
+
+        /* ── MODAL OVERLAY ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 1000;
+            align-items: center; justify-content: center;
         }
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #fff; border-radius: 14px;
+            width: 100%; max-width: 460px; padding: 28px 28px 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            position: relative; animation: modalIn .18s ease;
         }
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px;
         }
-        .badge-secondary {
-            background: #e2e3e5;
-            color: #6c757d;
+        .modal-title { font-size: 15px; font-weight: 700; color: #0d1b2a; }
+        .modal-close {
+            background: none; border: none; cursor: pointer;
+            color: #9ca3af; font-size: 18px; line-height: 1;
+            padding: 2px 6px; border-radius: 6px; transition: color .15s;
         }
-        .btn-success {
-            background: #48bb78;
-            color: white;
+        .modal-close:hover { color: #374151; }
+        .form-group { margin-bottom: 14px; }
+        .form-label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: #374151; margin-bottom: 5px;
         }
-        .btn-success:hover {
-            background: #38a169;
+        .form-label .req { color: #e53e3e; margin-left: 2px; }
+        .form-input, .form-textarea {
+            width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px;
+            padding: 8px 12px; font-size: 13px; color: #111827;
+            background: #f9fafb; outline: none; transition: border .18s;
+            font-family: inherit;
         }
-        .btn-warning {
-            background: #f6ad55;
-            color: white;
+        .form-input:focus, .form-textarea:focus { border-color: #3b82f6; background: #fff; }
+        .form-textarea { resize: vertical; min-height: 72px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-error {
+            background: #fff0f0; border: 1px solid #f5c6cb; color: #c0392b;
+            border-radius: 8px; padding: 8px 12px; font-size: 12px;
+            margin-bottom: 14px; display: none;
         }
-        .btn-warning:hover {
-            background: #ed8936;
+        .modal-error.show { display: block; }
+        .btn-submit-request {
+            width: 100%; background: #1e3a5f; color: #fff; border: none;
+            border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: background .15s; margin-top: 4px;
         }
-        .btn-danger {
-            background: #fc8181;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #f56565;
-        }
-        .text-muted {
-            color: #a0aec0;
-            font-size: 11px;
-        }
-        .vote-count {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            color: #9f7aea;
-            font-weight: 600;
-        }
-        .file-icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-right: 4px;
-            vertical-align: middle;
-        }
-        .subject-name-cell {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .upload-date {
-            color: #a0aec0;
-            font-size: 12px;
-        }
-        .stats {
-            display: flex;
-            gap: 24px;
-            margin-bottom: 24px;
-            padding: 16px;
-            background: #f7fafc;
-            border-radius: 8px;
-        }
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #718096;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d3748;
-        }
-        .requests-section {
-            margin-top: 40px;
-            border-top: 2px solid #e2e8f0;
-            padding-top: 32px;
-        }
-        .requests-section h2 {
-            font-size: 20px;
-            color: #1a202c;
-            margin-bottom: 16px;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .status-pending  { background: #fef3c7; color: #92400e; }
-        .status-approved { background: #dbeafe; color: #1e40af; }
-        .status-rejected { background: #fee2e2; color: #991b1b; }
-        .status-completed{ background: #d1fae5; color: #065f46; }
+        .btn-submit-request:hover { background: #0d2a45; }
+        .btn-submit-request:disabled { background: #93c5fd; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <h1>Student Dashboard</h1>
-                <div class="user-info">
-                    Welcome, <strong><%= loggedInUser.getUsername() %></strong>!
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-sq"><i class="fa-solid fa-book-open"></i></div>
+        <div class="logo-text">
+            <span class="app-name">PaperWise</span>
+            <span class="app-sub">Student Panel</span>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <p class="nav-label">Main</p>
+        <a href="${pageContext.request.contextPath}/studentDashboard" class="nav-item active">
+            <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+        <a href="${pageContext.request.contextPath}/studentDashboard" class="nav-item">
+            <i class="fa-regular fa-file-lines"></i> All Papers
+        </a>
+        <a href="#marked" class="nav-item">
+            <i class="fa-regular fa-bookmark"></i> My Marked
+        </a>
+        <a href="#requests" class="nav-item">
+            <i class="fa-regular fa-file"></i> My Requests
+        </a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="user-row">
+            <div class="avatar"><%= initials %></div>
+            <div class="user-meta">
+                <div class="u-name"><%= username %></div>
+                <div class="u-role">Student</div>
+            </div>
+        </div>
+        <form action="${pageContext.request.contextPath}/logout" method="post">
+            <button type="submit" class="logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </form>
+    </div>
+</nav>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+        <span class="topbar-title">Student Dashboard</span>
+        <div class="topbar-right">
+            <span class="pill-date">
+                <i class="fa-regular fa-calendar"></i> <%= currentMonthYear %>
+            </span>
+            <button class="btn-request-paper" id="openRequestModal" title="Request a paper">
+                <i class="fa-solid fa-plus"></i> Request Paper
+            </button>
+            <button class="bell-btn" title="Notifications">
+                <i class="fa-regular fa-bell"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <%-- Flash messages --%>
+        <%
+            String successMsg = (String) session.getAttribute("successMessage");
+            String msgAttr    = (String) session.getAttribute("msg");
+            if (successMsg != null) { session.removeAttribute("successMessage"); %>
+            <div class="alert-success" id="flashMsg">
+                <i class="fa-solid fa-circle-check"></i> <%= successMsg %>
+            </div>
+        <% } else if (msgAttr != null) { session.removeAttribute("msg"); %>
+            <div class="alert-success" id="flashMsg">
+                <i class="fa-solid fa-circle-check"></i> <%= msgAttr %>
+            </div>
+        <% } %>
+        <%
+            String errorMsg = (String) session.getAttribute("errorMessage");
+            if (errorMsg != null) { session.removeAttribute("errorMessage"); %>
+            <div class="alert-error">
+                <i class="fa-solid fa-circle-exclamation"></i> <%= errorMsg %>
+            </div>
+        <% } %>
+
+        <!-- ── STAT CARDS ── -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-regular fa-copy"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= totalPapers %></div>
+                    <div class="stat-label">Total Papers</div>
                 </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <a href="${pageContext.request.contextPath}/requestPaper" class="btn btn-secondary">
-                    Request Paper
-                </a>
-                <a href="${pageContext.request.contextPath}/logout" class="btn btn-secondary">
-                    Logout
-                </a>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-thumbs-up"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= totalUsefulMarks %></div>
+                    <div class="stat-label">Total Useful Marks</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-star"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= myMarksCount %></div>
+                    <div class="stat-label">Your Marks</div>
+                </div>
             </div>
         </div>
 
-        <% 
-            String successMessage = (String) session.getAttribute("successMessage");
-            String msg = (String) session.getAttribute("msg");
-            if (successMessage != null || msg != null) {
-                String displayMessage = successMessage != null ? successMessage : msg;
-                session.removeAttribute("successMessage");
-                session.removeAttribute("msg");
-        %>
-            <div class="success-message" id="successMessage">
-                <%= displayMessage %>
-            </div>
-        <% } %>
 
-        <% 
-            String errorMessage = (String) session.getAttribute("errorMessage");
-            if (errorMessage != null) {
-                session.removeAttribute("errorMessage");
-        %>
-            <div class="error-message">
-                <%= errorMessage %>
-            </div>
-        <% } %>
-
-        <% if (papers != null && !papers.isEmpty()) { 
-            int totalVotes = 0;
-            for (Paper p : papers) {
-                totalVotes += p.getUsefulCount();
-            }
-        %>
-            <div class="stats">
-                <div class="stat-item">
-                    <span class="stat-label">Total Papers</span>
-                    <span class="stat-value"><%= papers.size() %></span>
+        <!-- ── PAPERS TABLE ── -->
+        <div class="section-card" id="papers">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <span class="section-title">All Papers</span>
+                    <span class="count-pill indigo"><%= papers != null ? papers.size() : 0 %></span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Useful Marks</span>
-                    <span class="stat-value"><%= totalVotes %></span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Your Marks</span>
-                    <span class="stat-value"><%= votedPapers != null ? votedPapers.size() : 0 %></span>
-                </div>
+                <a href="${pageContext.request.contextPath}/requestPaper" class="act-btn act-view" style="font-size:12px; padding:6px 12px;">
+                    <i class="fa-regular fa-file"></i> Request Paper
+                </a>
             </div>
 
-            <div class="filter-section" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
-                <div class="search-bar" style="flex: 1;">
-                    <input type="text" 
-                           id="searchInput" 
-                           placeholder="Search by subject code, name, or year..." 
-                           value="<%= searchQuery != null ? searchQuery : "" %>">
-                </div>
-                
-                <div class="year-filter" style="min-width: 150px;">
-                    <select id="yearFilter" 
-                            class="form-control" 
-                            onchange="window.location.href='${pageContext.request.contextPath}/studentDashboard?year=' + this.value"
-                            style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%;">
-                        <option value="all" <%= request.getAttribute("selectedYear") == null ? "selected" : "" %>>
-                            All Years
-                        </option>
-                        <%
-                            @SuppressWarnings("unchecked")
-                            List<Integer> availableYears = (List<Integer>) request.getAttribute("availableYears");
-                            Integer selectedYear = (Integer) request.getAttribute("selectedYear");
-                            if (availableYears != null) {
-                                for (Integer year : availableYears) {
-                        %>
-                                    <option value="<%= year %>" 
-                                            <%= (selectedYear != null && selectedYear.equals(year)) ? "selected" : "" %>>
-                                        <%= year %>
-                                    </option>
-                        <%
-                                }
-                            }
-                        %>
-                    </select>
-                </div>
+            <!-- Filter bar -->
+            <div class="filter-bar">
+                <input type="text"
+                       id="searchInput"
+                       class="search-input"
+                       placeholder="Search subject, code, year…"
+                       value="<%= searchQuery != null ? searchQuery : "" %>">
+                <select id="yearFilter" class="year-select"
+                        onchange="window.location.href='${pageContext.request.contextPath}/studentDashboard?year='+this.value">
+                    <option value="all" <%= selectedYear == null ? "selected" : "" %>>All Years</option>
+                    <% if (availableYears != null) {
+                           for (Integer yr : availableYears) { %>
+                        <option value="<%= yr %>" <%= (selectedYear != null && selectedYear.equals(yr)) ? "selected" : "" %>><%= yr %></option>
+                    <% } } %>
+                </select>
             </div>
 
-            <table class="papers-table" id="papersTable">
+            <% if (papers != null && !papers.isEmpty()) { %>
+            <table class="data-table" id="papersTable">
                 <thead>
                     <tr>
                         <th>Subject</th>
@@ -437,259 +521,478 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% 
-                    for (Paper paper : papers) { 
-                        String fileExt = "";
-                        if (paper.getFileUrl() != null) {
-                            int lastDot = paper.getFileUrl().lastIndexOf('.');
-                            if (lastDot > 0) {
-                                fileExt = paper.getFileUrl().substring(lastDot + 1).toLowerCase();
-                            }
-                        }
-                        
-                        String fileIcon = "";
-                        if (fileExt.equals("pdf")) fileIcon = "PDF";
-                        else if (fileExt.equals("doc") || fileExt.equals("docx")) fileIcon = "DOC";
-                        else if (fileExt.equals("ppt") || fileExt.equals("pptx")) fileIcon = "PPT";
-                        else if (fileExt.equals("jpg") || fileExt.equals("jpeg") || fileExt.equals("png")) fileIcon = "IMG";
-                        else if (fileExt.equals("mp4") || fileExt.equals("mkv")) fileIcon = "VID";
-                    %>
-                    <tr data-subject-code="<%= paper.getSubjectCode().toLowerCase() %>" 
-                        data-subject-name="<%= paper.getSubjectName().toLowerCase() %>"
-                        data-year="<%= paper.getYear() %>">
-                        <td>
-                            <div class="subject-name-cell">
-                                <span class="file-icon"><%= fileIcon %></span>
-                                <div>
-                                    <%= paper.getSubjectName() %>
-                                    <% if (paper.isPopular()) { %>
-                                        <span class="badge badge-popular">Popular</span>
-                                    <% } %>
-                                </div>
+                <%
+                for (Paper paper : papers) {
+                    String diffLabel = paper.getDifficultyLabel();
+                    if (diffLabel == null || diffLabel.isEmpty()) diffLabel = "Not Rated";
+                    String diffCls = "diff-none";
+                    String diffIcon = "";
+                    if ("Easy".equalsIgnoreCase(diffLabel))   { diffCls = "diff-easy";   diffIcon = "fa-solid fa-check"; }
+                    else if ("Medium".equalsIgnoreCase(diffLabel)) { diffCls = "diff-medium"; diffIcon = "fa-solid fa-minus"; }
+                    else if ("Hard".equalsIgnoreCase(diffLabel))   { diffCls = "diff-hard";   diffIcon = "fa-solid fa-exclamation"; }
+
+                    // Derive file-type badge from fileUrl extension
+                    String fileUrl = paper.getFileUrl() != null ? paper.getFileUrl().toLowerCase() : "";
+                    String ftClass = "ft-other";
+                    String ftLabel = "FILE";
+                    if      (fileUrl.endsWith(".pdf"))                          { ftClass = "ft-pdf";  ftLabel = "PDF"; }
+                    else if (fileUrl.endsWith(".doc") || fileUrl.endsWith(".docx")) { ftClass = "ft-doc";  ftLabel = "DOC"; }
+                    else if (fileUrl.endsWith(".ppt") || fileUrl.endsWith(".pptx")) { ftClass = "ft-ppt";  ftLabel = "PPT"; }
+                    else if (fileUrl.endsWith(".jpg") || fileUrl.endsWith(".jpeg") || fileUrl.endsWith(".png")) { ftClass = "ft-img"; ftLabel = "IMG"; }
+                    else if (fileUrl.endsWith(".mp4") || fileUrl.endsWith(".mkv")) { ftClass = "ft-vid"; ftLabel = "VID"; }
+                    else if (fileUrl.endsWith(".txt"))                          { ftClass = "ft-txt";  ftLabel = "TXT"; }
+
+                    String uploadedDate = paper.getCreatedAt() != null
+                        ? paper.getCreatedAt().format(dtf) : "-";
+                %>
+                <tr data-subject-code="<%= paper.getSubjectCode().toLowerCase() %>"
+                    data-subject-name="<%= paper.getSubjectName().toLowerCase() %>"
+                    data-year="<%= paper.getYear() %>">
+                    <td class="td-subject">
+                        <span class="ft-badge <%= ftClass %>"><%= ftLabel %></span><%= paper.getSubjectName() %>
+                        <% if (paper.isPopular()) { %>
+                            <span class="pop-badge"><i class="fa-solid fa-star"></i> Popular</span>
+                        <% } %>
+                    </td>
+                    <td><span class="code-pill"><%= paper.getSubjectCode() %></span></td>
+                    <td><span class="year-pill"><%= paper.getYear() %></span></td>
+                    <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
+                    <td><span class="useful-num"><%= paper.getUsefulCount() %></span></td>
+                    <td>
+                        <span class="diff-badge <%= diffCls %>">
+                            <% if (!diffIcon.isEmpty()) { %><i class="<%= diffIcon %>"></i><% } %>
+                            <%= diffLabel %>
+                        </span>
+                        <br><small style="font-size:10px;color:#9ca3af;">
+                            (<%= paper.getEasyCount() %> | <%= paper.getMediumCount() %> | <%= paper.getHardCount() %>)
+                        </small>
+                    </td>
+                    <td class="date-cell"><%= uploadedDate %></td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="${pageContext.request.contextPath}/student/viewPaper?id=<%= paper.getPaperId() %>"
+                               target="_blank" class="act-btn act-view">
+                                <i class="fa-regular fa-eye"></i> View
+                            </a>
+                            <a href="${pageContext.request.contextPath}/student/downloadPaper?id=<%= paper.getPaperId() %>"
+                               class="act-btn act-download">
+                                <i class="fa-solid fa-download"></i> Download
+                            </a>
+                            <%-- Useful mark toggle — fetch-powered --%>
+                            <button
+                                class="act-btn <%= paper.isAlreadyMarked() ? "act-marked" : "act-vote" %> btn-useful"
+                                data-paper-id="<%= paper.getPaperId() %>"
+                                data-marked="<%= paper.isAlreadyMarked() %>"
+                                data-ctx="${pageContext.request.contextPath}">
+                                <i class="fa-solid fa-thumbs-up"></i>
+                                <span class="useful-label"><%= paper.isAlreadyMarked() ? "Marked" : "Useful" %></span>
+                                (<span class="useful-count"><%= paper.getUsefulCount() %></span>)
+                            </button>
+                            <%-- Difficulty rating — fetch-powered --%>
+                            <div class="diff-btns" data-paper-id="<%= paper.getPaperId() %>">
+                                <button class="act-btn act-easy btn-diff" data-level="easy"
+                                        data-paper-id="<%= paper.getPaperId() %>"
+                                        data-ctx="${pageContext.request.contextPath}">
+                                    <i class="fa-solid fa-check"></i> Easy
+                                    (<span class="diff-count-easy"><%= paper.getEasyCount() %></span>)
+                                </button>
+                                <button class="act-btn act-medium btn-diff" data-level="medium"
+                                        data-paper-id="<%= paper.getPaperId() %>"
+                                        data-ctx="${pageContext.request.contextPath}">
+                                    <i class="fa-solid fa-minus"></i> Med
+                                    (<span class="diff-count-medium"><%= paper.getMediumCount() %></span>)
+                                </button>
+                                <button class="act-btn act-hard btn-diff" data-level="hard"
+                                        data-paper-id="<%= paper.getPaperId() %>"
+                                        data-ctx="${pageContext.request.contextPath}">
+                                    <i class="fa-solid fa-exclamation"></i> Hard
+                                    (<span class="diff-count-hard"><%= paper.getHardCount() %></span>)
+                                </button>
                             </div>
-                        </td>
-                        <td><%= paper.getSubjectCode() %></td>
-                        <td><%= paper.getYear() %></td>
-                        <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
-                        <td>
-                            <span class="vote-count">
-                                <%= paper.getUsefulCount() %>
-                            </span>
-                        </td>
-                        <td>
-                            <%
-                                String diffLabel = paper.getDifficultyLabel();
-                                String diffClass = "";
-                                if ("Easy".equals(diffLabel)) {
-                                    diffClass = "badge-success";
-                                } else if ("Medium".equals(diffLabel)) {
-                                    diffClass = "badge-warning";
-                                } else if ("Hard".equals(diffLabel)) {
-                                    diffClass = "badge-danger";
-                                } else if ("Mixed".equals(diffLabel)) {
-                                    diffClass = "badge-dark";
-                                } else {
-                                    diffClass = "badge-light";
-                                }
-                            %>
-                            <span class="badge <%= diffClass %>">
-                                <%= diffLabel %>
-                            </span>
-                            <br>
-                            <small class="text-muted">
-                                (<%= paper.getEasyCount() %> | <%= paper.getMediumCount() %> | <%= paper.getHardCount() %>)
-                            </small>
-                        </td>
-                        <td>
-                            <% if (paper.getCreatedAt() != null) { %>
-                                <span class="upload-date"><%= paper.getCreatedAt().format(dateFormatter) %></span>
-                            <% } else { %>
-                                <span class="upload-date">-</span>
-                            <% } %>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>" 
-                                   target="_blank" 
-                                   class="btn btn-small btn-view">
-                                    View
-                                </a>
-                                <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>&download=true" 
-                                   class="btn btn-small btn-download">
-                                    Download
-                                </a>
-                                <% if ("student".equalsIgnoreCase(loggedInUser.getRole())) { %>
-                                    <div class="vote-section">
-                                        <% if (paper.isAlreadyMarked()) { %>
-                                            <button disabled class="btn btn-small btn-voted">
-                                                Marked (<%= paper.getUsefulCount() %>)
-                                            </button>
-                                        <% } else { %>
-                                            <form action="${pageContext.request.contextPath}/markUseful" 
-                                                  method="post" 
-                                                  style="display:inline;"
-                                                  name="usefulForm_<%= paper.getPaperId() %>">
-                                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
-                                                <button type="submit" class="btn btn-small btn-vote">
-                                                    Useful (<%= paper.getUsefulCount() %>)
-                                                </button>
-                                            </form>
-                                        <% } %>
-                                    </div>
-                                    <br>
-                                    <div class="difficulty-section" style="margin-top: 4px;">
-                                        <form action="${pageContext.request.contextPath}/rateDifficulty" 
-                                              method="post" 
-                                              style="display:inline;"
-                                              name="diffEasyForm_<%= paper.getPaperId() %>">
-                                            <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
-                                            <button type="submit" 
-                                                    name="difficulty" 
-                                                    value="Easy" 
-                                                    class="btn btn-small btn-success" 
-                                                    style="padding: 4px 8px; font-size: 11px;">
-                                                Easy
-                                            </button>
-                                        </form>
-                                        <form action="${pageContext.request.contextPath}/rateDifficulty" 
-                                              method="post" 
-                                              style="display:inline;"
-                                              name="diffMediumForm_<%= paper.getPaperId() %>">
-                                            <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
-                                            <button type="submit" 
-                                                    name="difficulty" 
-                                                    value="Medium" 
-                                                    class="btn btn-small btn-warning" 
-                                                    style="padding: 4px 8px; font-size: 11px;">
-                                                Medium
-                                            </button>
-                                        </form>
-                                        <form action="${pageContext.request.contextPath}/rateDifficulty" 
-                                              method="post" 
-                                              style="display:inline;"
-                                              name="diffHardForm_<%= paper.getPaperId() %>">
-                                            <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
-                                            <button type="submit" 
-                                                    name="difficulty" 
-                                                    value="Hard" 
-                                                    class="btn btn-small btn-danger" 
-                                                    style="padding: 4px 8px; font-size: 11px;">
-                                                Hard
-                                            </button>
-                                        </form>
-                                    </div>
-                                <% } %>
-                            </div>
-                        </td>
-                    </tr>
-                    <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% } %>
                 </tbody>
             </table>
-        <% } else { %>
+            <% } else { %>
             <div class="empty-state">
-                <div class="empty-state-icon"></div>
-                <h3>No Papers Available</h3>
-                <p>Check back later for new study materials!</p>
+                <i class="fa-regular fa-folder-open" style="color:#cbd5e0;"></i>
+                <p>No papers available yet.</p>
             </div>
-        <% } %>
-    </div>
+            <% } %>
+        </div>
 
-    <div class="container requests-section" style="margin-top: 24px;">
-        <h2>My Paper Requests</h2>
 
-        <% if (myRequests != null && !myRequests.isEmpty()) { %>
-            <table class="papers-table">
+        <!-- ── MY REQUESTS TABLE ── -->
+        <div class="section-card" id="requests">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <span class="section-title">My Paper Requests</span>
+                    <span class="count-pill amber" id="requestsCountPill"><%= myRequests != null ? myRequests.size() : 0 %></span>
+                </div>
+                <button class="act-btn act-view" style="font-size:12px; padding:6px 12px;" onclick="document.getElementById('openRequestModal').click()">
+                    <i class="fa-solid fa-plus"></i> New Request
+                </button>
+            </div>
+
+            <% if (myRequests != null && !myRequests.isEmpty()) { %>
+            <table class="data-table" id="requestsTable">
                 <thead>
                     <tr>
                         <th>Subject Name</th>
-                        <th>Subject Code</th>
+                        <th>Code</th>
                         <th>Year</th>
                         <th>Description</th>
                         <th>Status</th>
-                        <th>Requested At</th>
+                        <th>Requested</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <% for (PaperRequest req : myRequests) {
-                        String statusClass = "status-" + (req.getStatus() != null ? req.getStatus().toLowerCase() : "pending");
-                    %>
-                    <tr>
-                        <td><%= req.getSubjectName() %></td>
-                        <td><%= req.getSubjectCode() %></td>
-                        <td><%= req.getYear() %></td>
-                        <td><%= req.getDescription() != null && !req.getDescription().isEmpty() ? req.getDescription() : "-" %></td>
-                        <td>
-                            <span class="status-badge <%= statusClass %>">
-                                <%= req.getStatus() != null ? req.getStatus() : "pending" %>
-                            </span>
-                        </td>
-                        <td>
-                            <% if (req.getCreatedAt() != null) { %>
-                                <%= req.getCreatedAt().format(dateFormatter) %>
-                            <% } else { %>
-                                -
-                            <% } %>
-                        </td>
-                        <td>
-                            <form action="${pageContext.request.contextPath}/deleteRequest"
-                                  method="post"
-                                  style="display:inline;"
-                                  onsubmit="return confirm('Are you sure you want to delete this request?');">
-                                <input type="hidden" name="requestId" value="<%= req.getRequestId() %>">
-                                <button type="submit" class="btn btn-small btn-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <% } %>
+                <% for (PaperRequest req : myRequests) {
+                    String st = req.getStatus() != null ? req.getStatus().toLowerCase() : "pending";
+                    String stCls = "s-pending";
+                    String stIcon = "fa-regular fa-clock";
+                    if ("approved".equals(st))  { stCls = "s-approved";  stIcon = "fa-solid fa-circle-check"; }
+                    else if ("rejected".equals(st))  { stCls = "s-rejected";  stIcon = "fa-solid fa-circle-xmark"; }
+                    else if ("completed".equals(st)) { stCls = "s-completed"; stIcon = "fa-solid fa-flag"; }
+                %>
+                <tr id="req-row-<%= req.getRequestId() %>">
+                    <td class="td-subject"><%= req.getSubjectName() %></td>
+                    <td><span class="code-pill"><%= req.getSubjectCode() %></span></td>
+                    <td><span class="year-pill"><%= req.getYear() %></span></td>
+                    <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        <%= req.getDescription() != null && !req.getDescription().isEmpty() ? req.getDescription() : "-" %>
+                    </td>
+                    <td>
+                        <span class="status-pill <%= stCls %>">
+                            <i class="<%= stIcon %>"></i> <%= st %>
+                        </span>
+                    </td>
+                    <td style="font-size:12px; color:#6b7280;">
+                        <%= req.getCreatedAt() != null ? req.getCreatedAt().format(dtf) : "-" %>
+                    </td>
+                    <td>
+                        <button class="act-btn act-delete-sm btn-delete-req"
+                                data-request-id="<%= req.getRequestId() %>"
+                                data-ctx="${pageContext.request.contextPath}">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                <% } %>
                 </tbody>
             </table>
-        <% } else { %>
-            <div class="empty-state" style="padding: 32px 20px;">
-                <div class="empty-state-icon"></div>
-                <h3>No Requests Yet</h3>
-                <p>You have not submitted any paper requests yet.</p>
-                <a href="${pageContext.request.contextPath}/requestPaper"
-                   style="display:inline-block; margin-top:12px; color:#667eea; font-weight:500; text-decoration:none;">
-                    + Request a Paper
-                </a>
+            <% } else { %>
+            <div class="empty-state" id="requestsEmpty" style="padding:32px 20px;">
+                <i class="fa-regular fa-folder-open" style="color:#cbd5e0; font-size:28px;"></i>
+                <p>No requests yet. Click "New Request" to get started.</p>
             </div>
-        <% } %>
+            <% } %>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════════ REQUEST PAPER MODAL ═══════════════════ -->
+<div class="modal-overlay" id="requestModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fa-regular fa-file" style="margin-right:7px;color:#1e3a5f;"></i>Request a Paper</span>
+            <button class="modal-close" id="closeRequestModal" title="Close">&times;</button>
+        </div>
+        <div class="modal-error" id="modalError"></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Subject Name <span class="req">*</span></label>
+                <input type="text" id="req-subject-name" class="form-input" placeholder="e.g. Data Structures" maxlength="120">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject Code <span class="req">*</span></label>
+                <input type="text" id="req-subject-code" class="form-input" placeholder="e.g. CS301" maxlength="30">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Year <span class="req">*</span></label>
+            <input type="number" id="req-year" class="form-input" placeholder="e.g. 2023" min="2006" max="2026">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description / Note</label>
+            <textarea id="req-description" class="form-textarea" placeholder="e.g. Need the 2022 mid-term paper by tomorrow" maxlength="500"></textarea>
+        </div>
+        <button class="btn-submit-request" id="submitRequestBtn"
+                data-ctx="${pageContext.request.contextPath}">
+            <i class="fa-solid fa-paper-plane"></i> Submit Request
+        </button>
     </div>
+</div>
 
-    <script>
-        const successMsg = document.getElementById('successMessage');
-        if (successMsg) {
-            setTimeout(() => {
-                successMsg.style.transition = 'opacity 0.5s ease-out';
-                successMsg.style.opacity = '0';
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 500);
-            }, 3000);
-        }
+<script>
+    // Auto-dismiss flash message
+    const flash = document.getElementById('flashMsg');
+    if (flash) {
+        setTimeout(() => {
+            flash.style.transition = 'opacity .4s';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 400);
+        }, 3000);
+    }
 
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const query = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#papersTable tbody tr');
-                
-                rows.forEach(row => {
-                    const subjectCode = row.getAttribute('data-subject-code');
-                    const subjectName = row.getAttribute('data-subject-name');
-                    const year = row.getAttribute('data-year');
-                    
-                    if (subjectCode.includes(query) || 
-                        subjectName.includes(query) || 
-                        year.includes(query)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+    // Client-side search filter
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#papersTable tbody tr').forEach(row => {
+                const code = row.dataset.subjectCode || '';
+                const name = row.dataset.subjectName || '';
+                const year = row.dataset.year || '';
+                row.style.display = (code.includes(q) || name.includes(q) || year.includes(q)) ? '' : 'none';
             });
+        });
+    }
+
+    // ── Useful mark toggle ──────────────────────────────────────────────────
+    document.querySelectorAll('.btn-useful').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const paperId = this.dataset.paperId;
+            const ctx     = this.dataset.ctx;
+            const self    = this;
+
+            self.disabled = true;
+
+            const body = new URLSearchParams({ paperId });
+
+            fetch(ctx + '/student/markUseful', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { self.disabled = false; return; }
+
+                    const label = self.querySelector('.useful-label');
+                    const count = self.querySelector('.useful-count');
+
+                    if (data.marked) {
+                        self.classList.remove('act-vote');
+                        self.classList.add('act-marked');
+                        label.textContent = 'Marked';
+                    } else {
+                        self.classList.remove('act-marked');
+                        self.classList.add('act-vote');
+                        label.textContent = 'Useful';
+                    }
+                    count.textContent = data.count;
+                    self.dataset.marked = data.marked;
+                    self.disabled = false;
+                })
+                .catch(() => { self.disabled = false; });
+        });
+    });
+
+    // ── Difficulty rating ───────────────────────────────────────────────────
+    document.querySelectorAll('.btn-diff').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const paperId = this.dataset.paperId;
+            const level   = this.dataset.level;
+            const ctx     = this.dataset.ctx;
+            const self    = this;
+
+            self.disabled = true;
+
+            const body = new URLSearchParams({ paperId, difficulty: level });
+
+            fetch(ctx + '/student/rateDifficulty', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { self.disabled = false; return; }
+
+                    // Update counts in all three buttons for this paper
+                    const container = document.querySelector(`.diff-btns[data-paper-id="${paperId}"]`);
+                    if (!container) { self.disabled = false; return; }
+
+                    container.querySelector('.diff-count-easy').textContent   = data.easy;
+                    container.querySelector('.diff-count-medium').textContent = data.medium;
+                    container.querySelector('.diff-count-hard').textContent   = data.hard;
+
+                    // Highlight selected, clear others
+                    container.querySelectorAll('.btn-diff').forEach(b => {
+                        b.classList.remove('act-diff-selected');
+                        b.disabled = false;
+                    });
+                    self.classList.add('act-diff-selected');
+                })
+                .catch(() => { self.disabled = false; });
+        });
+    });
+
+    // ── Request Paper Modal ─────────────────────────────────────────────────
+    const modal       = document.getElementById('requestModal');
+    const openBtn     = document.getElementById('openRequestModal');
+    const closeBtn    = document.getElementById('closeRequestModal');
+    const submitBtn   = document.getElementById('submitRequestBtn');
+    const modalError  = document.getElementById('modalError');
+
+    function openModal() {
+        modal.classList.add('open');
+        document.getElementById('req-subject-name').focus();
+    }
+    function closeModal() {
+        modal.classList.remove('open');
+        modalError.classList.remove('show');
+        modalError.textContent = '';
+        document.getElementById('req-subject-name').value = '';
+        document.getElementById('req-subject-code').value = '';
+        document.getElementById('req-year').value = '';
+        document.getElementById('req-description').value = '';
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    submitBtn.addEventListener('click', function () {
+        const ctx         = this.dataset.ctx;
+        const subjectName = document.getElementById('req-subject-name').value.trim();
+        const subjectCode = document.getElementById('req-subject-code').value.trim();
+        const year        = document.getElementById('req-year').value.trim();
+        const description = document.getElementById('req-description').value.trim();
+
+        // Client-side validation
+        if (!subjectName) { showModalError('Subject Name is required.'); return; }
+        if (!subjectCode) { showModalError('Subject Code is required.'); return; }
+        if (!year)        { showModalError('Year is required.'); return; }
+        const yr = parseInt(year);
+        if (isNaN(yr) || yr < 2006 || yr > 2026) { showModalError('Year must be between 2006 and 2026.'); return; }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+        modalError.classList.remove('show');
+
+        const body = new URLSearchParams({ subjectName, subjectCode, year, description });
+
+        fetch(ctx + '/student/submitRequest', {
+            method: 'POST', body,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
+            if (!data.success) { showModalError(data.error || 'Submission failed.'); return; }
+
+            closeModal();
+            addRequestRow(data.request, ctx);
+        })
+        .catch(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
+            showModalError('Network error. Please try again.');
+        });
+    });
+
+    function showModalError(msg) {
+        modalError.textContent = msg;
+        modalError.classList.add('show');
+    }
+
+    function addRequestRow(req, ctx) {
+        // Update count pill
+        const pill = document.getElementById('requestsCountPill');
+        if (pill) pill.textContent = parseInt(pill.textContent || '0') + 1;
+
+        // Hide empty state if visible
+        const empty = document.getElementById('requestsEmpty');
+        if (empty) empty.style.display = 'none';
+
+        // Create table if it doesn't exist yet
+        let tbody = document.querySelector('#requestsTable tbody');
+        if (!tbody) {
+            const card = document.getElementById('requests');
+            const table = document.createElement('table');
+            table.id = 'requestsTable';
+            table.className = 'data-table';
+            table.innerHTML = `<thead><tr>
+                <th>Subject Name</th><th>Code</th><th>Year</th>
+                <th>Description</th><th>Status</th><th>Requested</th><th>Action</th>
+            </tr></thead><tbody></tbody>`;
+            card.appendChild(table);
+            tbody = table.querySelector('tbody');
         }
-    </script>
+
+        const tr = document.createElement('tr');
+        tr.id = 'req-row-' + req.requestId;
+        tr.innerHTML = `
+            <td class="td-subject">${escHtml(req.subjectName)}</td>
+            <td><span class="code-pill">${escHtml(req.subjectCode)}</span></td>
+            <td><span class="year-pill">${req.year}</span></td>
+            <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${req.description ? escHtml(req.description) : '-'}</td>
+            <td><span class="status-pill s-pending"><i class="fa-regular fa-clock"></i> pending</span></td>
+            <td style="font-size:12px;color:#6b7280;">${req.requestedAt}</td>
+            <td><button class="act-btn act-delete-sm btn-delete-req"
+                        data-request-id="${req.requestId}" data-ctx="${ctx}">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button></td>`;
+        tbody.insertBefore(tr, tbody.firstChild);
+
+        // Attach delete listener to the new button
+        attachDeleteListener(tr.querySelector('.btn-delete-req'));
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Delete Request ──────────────────────────────────────────────────────
+    function attachDeleteListener(btn) {
+        btn.addEventListener('click', function () {
+            if (!confirm('Delete this request?')) return;
+            const requestId = this.dataset.requestId;
+            const ctx       = this.dataset.ctx;
+            const self      = this;
+            self.disabled   = true;
+
+            fetch(ctx + '/student/deleteRequest', {
+                method: 'POST',
+                body: new URLSearchParams({ requestId }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { self.disabled = false; return; }
+                const row = document.getElementById('req-row-' + requestId);
+                if (row) row.remove();
+
+                // Update count pill
+                const pill = document.getElementById('requestsCountPill');
+                if (pill) {
+                    const n = Math.max(0, parseInt(pill.textContent || '1') - 1);
+                    pill.textContent = n;
+                }
+
+                // Show empty state if no rows left
+                const tbody = document.querySelector('#requestsTable tbody');
+                if (tbody && tbody.children.length === 0) {
+                    const table = document.getElementById('requestsTable');
+                    if (table) table.remove();
+                    let empty = document.getElementById('requestsEmpty');
+                    if (!empty) {
+                        empty = document.createElement('div');
+                        empty.id = 'requestsEmpty';
+                        empty.className = 'empty-state';
+                        empty.style.padding = '32px 20px';
+                        empty.innerHTML = '<i class="fa-regular fa-folder-open" style="color:#cbd5e0;font-size:28px;"></i><p>No requests yet. Click "New Request" to get started.</p>';
+                        document.getElementById('requests').appendChild(empty);
+                    } else {
+                        empty.style.display = '';
+                    }
+                }
+            })
+            .catch(() => { self.disabled = false; });
+        });
+    }
+
+    document.querySelectorAll('.btn-delete-req').forEach(attachDeleteListener);
+</script>
 </body>
 </html>

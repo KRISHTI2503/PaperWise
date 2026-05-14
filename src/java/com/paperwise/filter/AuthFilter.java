@@ -60,6 +60,16 @@ public class AuthFilter implements Filter {
                 }
             }
 
+            if (isStudentOnlyResource(requestURI, contextPath)) {
+                if (!"student".equalsIgnoreCase(loggedInUser.getRole())) {
+                    LOGGER.log(Level.WARNING,
+                            "Non-student user ''{0}'' (role={1}) attempted to access student resource: {2}",
+                            new Object[]{loggedInUser.getUsername(), loggedInUser.getRole(), requestURI});
+                    httpResponse.sendRedirect(contextPath + LOGIN_PAGE);
+                    return;
+                }
+            }
+
             chain.doFilter(request, response);
         }
     }
@@ -82,7 +92,8 @@ public class AuthFilter implements Filter {
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
                 || path.startsWith("/images/")
-                || path.startsWith("/static/");
+                || path.startsWith("/static/")
+                || path.startsWith("/resources/");
     }
 
     private boolean isAdminOnlyResource(String requestURI, String contextPath) {
@@ -91,10 +102,17 @@ public class AuthFilter implements Filter {
         return path.equals("/upload.jsp")
                 || path.equals("/uploadPaper")
                 || path.equals("/adminDashboard")
+                || path.equals("/allPapers")
+                || path.equals("/students")
                 || path.equals("/adminRequests")
                 || path.equals("/editPaper")
                 || path.equals("/editPaper.jsp")
                 || path.equals("/deletePaper")
                 || path.startsWith("/admin-");
+    }
+
+    private boolean isStudentOnlyResource(String requestURI, String contextPath) {
+        String path = requestURI.substring(contextPath.length());
+        return path.startsWith("/student/") || path.equals("/studentDashboard");
     }
 }

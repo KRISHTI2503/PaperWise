@@ -90,12 +90,8 @@ public class MarkUsefulServlet extends HttpServlet {
             }
 
         } catch (NumberFormatException e) {
-            System.err.println("ERROR: NumberFormatException parsing paperId: " + paperIdParam);
-            e.printStackTrace();
             session.setAttribute("msg", "Error: Invalid paper ID format.");
         } catch (Exception e) {
-            System.err.println("ERROR: Unexpected exception in MarkUsefulServlet");
-            e.printStackTrace();
             session.setAttribute("msg", "An error occurred. Please try again.");
         }
 

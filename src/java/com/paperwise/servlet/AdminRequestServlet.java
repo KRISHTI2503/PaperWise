@@ -64,6 +64,17 @@ public class AdminRequestServlet extends HttpServlet {
             List<PaperRequest> requests = requestDAO.getAllRequests();
             request.setAttribute("requests", requests);
 
+            // Stat counts for dashboard cards
+            long pendingCount   = requests.stream().filter(r -> "pending".equalsIgnoreCase(r.getStatus())).count();
+            long approvedCount  = requests.stream().filter(r -> "approved".equalsIgnoreCase(r.getStatus())).count();
+            long completedCount = requests.stream().filter(r -> "completed".equalsIgnoreCase(r.getStatus())).count();
+            long rejectedCount  = requests.stream().filter(r -> "rejected".equalsIgnoreCase(r.getStatus())).count();
+            request.setAttribute("totalCount",     requests.size());
+            request.setAttribute("pendingCount",   pendingCount);
+            request.setAttribute("approvedCount",  approvedCount);
+            request.setAttribute("completedCount", completedCount);
+            request.setAttribute("rejectedCount",  rejectedCount);
+
             LOGGER.log(Level.INFO, "Admin {0} viewing {1} paper requests.",
                     new Object[]{loggedInUser.getUsername(), requests.size()});
 
@@ -127,11 +138,11 @@ public class AdminRequestServlet extends HttpServlet {
             boolean success = requestDAO.updateStatus(requestId, normalizedStatus);
 
             if (success) {
-                session.setAttribute("successMessage",
-                        "Request status updated to '" + normalizedStatus + "' successfully!");
                 LOGGER.log(Level.INFO,
                         "Admin {0} updated request {1} status to: {2}",
                         new Object[]{loggedInUser.getUsername(), requestId, normalizedStatus});
+                response.sendRedirect(request.getContextPath() + "/adminRequests?updated=true");
+                return;
             } else {
                 session.setAttribute("errorMessage", "Failed to update request status.");
             }

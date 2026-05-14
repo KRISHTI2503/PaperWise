@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.time.Year;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +54,15 @@ public class RequestPaperServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
+
+        List<com.paperwise.model.PaperRequest> myRequests =
+                requestDAO.getRequestsByUserId(loggedInUser.getUserId());
+        request.setAttribute("myRequests",     myRequests);
+        request.setAttribute("totalRequests",  myRequests.size());
+        request.setAttribute("pendingCount",   myRequests.stream()
+                .filter(r -> "pending".equalsIgnoreCase(r.getStatus())).count());
+        request.setAttribute("completedCount", myRequests.stream()
+                .filter(r -> "completed".equalsIgnoreCase(r.getStatus())).count());
 
         request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
     }
@@ -119,7 +129,7 @@ public class RequestPaperServlet extends HttpServlet {
                         "Paper request submitted by user {0}: {1} ({2}) - Year {3}",
                         new Object[]{loggedInUser.getUsername(), subjectName, subjectCode, year});
 
-                response.sendRedirect(request.getContextPath() + REDIRECT_STUDENT_DASHBOARD);
+                response.sendRedirect(request.getContextPath() + "/requestPaper?submitted=true");
             } else {
                 request.setAttribute("errorMessage", "Failed to submit request. Please try again.");
                 preserveFormData(request, subjectName, subjectCode, yearStr, description);

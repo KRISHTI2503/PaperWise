@@ -38,6 +38,10 @@ public class DifficultyVoteServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        if (session == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
 
         User user = (User) session.getAttribute("user");
         if (user == null) {
@@ -51,10 +55,7 @@ public class DifficultyVoteServlet extends HttpServlet {
 
         String paperIdParam = request.getParameter("paperId");
         String level = request.getParameter("difficulty");
-
-        if (level != null) {
-            level = level.toLowerCase().trim();
-        }
+        String normalizedLevel = (level != null) ? level.trim().toLowerCase() : null;
 
         if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
             session.setAttribute("errorMessage", "Invalid paper ID.");
@@ -62,13 +63,13 @@ public class DifficultyVoteServlet extends HttpServlet {
             return;
         }
 
-        if (level == null || level.isEmpty()) {
+        if (normalizedLevel == null || normalizedLevel.isEmpty()) {
             session.setAttribute("errorMessage", "Please select a difficulty level.");
             response.sendRedirect("studentDashboard");
             return;
         }
 
-        if (!VALID_LEVELS.contains(level)) {
+        if (!VALID_LEVELS.contains(normalizedLevel)) {
             session.setAttribute("errorMessage",
                     "Invalid difficulty level. Must be one of: " + String.join(", ", VALID_LEVELS));
             response.sendRedirect("studentDashboard");
@@ -77,23 +78,15 @@ public class DifficultyVoteServlet extends HttpServlet {
 
         try {
             int paperId = Integer.parseInt(paperIdParam);
-
-            difficultyVoteDAO.addOrUpdateDifficultyVote(paperId, user.getUserId(), level);
-
-            session.setAttribute("successMessage", "Difficulty rating recorded: " + level);
+            difficultyVoteDAO.addOrUpdateDifficultyVote(paperId, user.getUserId(), normalizedLevel);
+            session.setAttribute("successMessage", "Difficulty rating recorded: " + normalizedLevel);
 
         } catch (NumberFormatException e) {
             session.setAttribute("errorMessage", "Invalid paper ID format.");
-            System.err.println("Invalid paper ID format: " + paperIdParam);
-            e.printStackTrace();
         } catch (IllegalArgumentException e) {
             session.setAttribute("errorMessage", e.getMessage());
-            System.err.println("Invalid difficulty vote: " + e.getMessage());
-            e.printStackTrace();
         } catch (Exception e) {
             session.setAttribute("errorMessage", "Failed to record difficulty rating. Please try again.");
-            System.err.println("Unexpected error while recording difficulty vote:");
-            e.printStackTrace();
         }
 
         response.sendRedirect("studentDashboard");

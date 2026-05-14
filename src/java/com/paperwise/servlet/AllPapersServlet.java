@@ -6,6 +6,7 @@ import com.paperwise.dao.UserDAO;
 import com.paperwise.model.Paper;
 import com.paperwise.model.PaperRequest;
 import com.paperwise.model.User;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,18 +19,19 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@WebServlet("/adminDashboard")
-public class AdminDashboardServlet extends HttpServlet {
+@WebServlet("/allPapers")
+public class AllPapersServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(AdminDashboardServlet.class.getName());
-    private static final String VIEW_ADMIN_DASHBOARD = "/admin-dashboard.jsp";
+    private static final Logger LOGGER = Logger.getLogger(AllPapersServlet.class.getName());
+
+    private static final String VIEW_ALL_PAPERS      = "/allPapers.jsp";
     private static final String ATTR_LOGGED_IN_USER  = "loggedInUser";
     private static final String ROLE_ADMIN           = "admin";
 
-    private PaperDAO       paperDAO;
+    private PaperDAO        paperDAO;
     private PaperRequestDAO requestDAO;
-    private UserDAO        userDAO;
+    private UserDAO         userDAO;
 
     @Override
     public void init() throws ServletException {
@@ -38,8 +40,8 @@ public class AdminDashboardServlet extends HttpServlet {
             requestDAO = new PaperRequestDAO();
             userDAO    = new UserDAO();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to initialise DAOs in AdminDashboardServlet.", e);
-            throw new ServletException("AdminDashboardServlet initialisation failed.", e);
+            LOGGER.log(Level.SEVERE, "Failed to initialise DAOs in AllPapersServlet.", e);
+            throw new ServletException("AllPapersServlet initialisation failed.", e);
         }
     }
 
@@ -66,28 +68,15 @@ public class AdminDashboardServlet extends HttpServlet {
         }
 
         try {
-            // Papers list (with vote/difficulty counts for the table)
+            // All papers with vote + difficulty counts
             List<Paper> papers = paperDAO.getAllPapersWithVotes();
             request.setAttribute("papers", papers);
 
-            // Stat card: total students
-            int totalStudents = userDAO.getStudentCount();
-            request.setAttribute("totalStudents", totalStudents);
-
-            // Stat card: total useful marks
+            // Stat: total useful marks
             int totalUsefulMarks = paperDAO.getTotalUsefulMarks();
             request.setAttribute("totalUsefulMarks", totalUsefulMarks);
 
-            // Requests list (for Recent Requests panel + pending count)
-            List<PaperRequest> requests = requestDAO.getAllRequests();
-            request.setAttribute("requests", requests);
-
-            long pendingCount = requests.stream()
-                    .filter(r -> "pending".equalsIgnoreCase(r.getStatus()))
-                    .count();
-            request.setAttribute("pendingRequestsCount", (int) pendingCount);
-
-            // Difficulty breakdown (global across all papers)
+            // Stat: global difficulty breakdown
             int[] diffStats = paperDAO.getGlobalDifficultyStats();
             int easyCount   = diffStats[0];
             int mediumCount = diffStats[1];
@@ -96,7 +85,7 @@ public class AdminDashboardServlet extends HttpServlet {
             request.setAttribute("mediumCount",  mediumCount);
             request.setAttribute("hardCount",    hardCount);
 
-            // Most common difficulty across all student votes
+            // Most common difficulty
             String mostCommonDifficulty = "Not Rated";
             if (easyCount > 0 || mediumCount > 0 || hardCount > 0) {
                 if (easyCount >= mediumCount && easyCount >= hardCount) {
@@ -109,15 +98,21 @@ public class AdminDashboardServlet extends HttpServlet {
             }
             request.setAttribute("mostCommonDifficulty", mostCommonDifficulty);
 
-            LOGGER.log(Level.INFO, "Admin dashboard loaded: {0} papers, {1} students, "
-                    + "{2} pending requests.", new Object[]{papers.size(), totalStudents, pendingCount});
+            // Pending requests count (for sidebar badge)
+            List<PaperRequest> requests = requestDAO.getAllRequests();
+            long pendingCount = requests.stream()
+                    .filter(r -> "pending".equalsIgnoreCase(r.getStatus()))
+                    .count();
+            request.setAttribute("pendingRequestsCount", (int) pendingCount);
 
-            request.getRequestDispatcher(VIEW_ADMIN_DASHBOARD).forward(request, response);
+            LOGGER.log(Level.INFO, "All Papers page loaded: {0} papers.", papers.size());
+
+            request.getRequestDispatcher(VIEW_ALL_PAPERS).forward(request, response);
 
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error loading admin dashboard.", e);
-            request.setAttribute("errorMessage", "Failed to load dashboard. Please try again.");
-            request.getRequestDispatcher(VIEW_ADMIN_DASHBOARD).forward(request, response);
+            LOGGER.log(Level.SEVERE, "Error loading All Papers page.", e);
+            request.setAttribute("errorMessage", "Failed to load papers. Please try again.");
+            request.getRequestDispatcher(VIEW_ALL_PAPERS).forward(request, response);
         }
     }
 }

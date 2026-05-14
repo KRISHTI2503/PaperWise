@@ -72,6 +72,12 @@ public class DeleteRequestServlet extends HttpServlet {
             session.setAttribute("errorMessage", "A database error occurred. Please try again.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/studentDashboard");
+        // Redirect back to the page the delete was triggered from
+        String referer = request.getHeader("Referer");
+        if (referer != null && referer.contains("requestPaper")) {
+            response.sendRedirect(request.getContextPath() + "/requestPaper?deleted=true");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+        }
     }
 }

@@ -25,6 +25,9 @@ public class VoteDAO {
     private static final String SQL_GET_VOTE_COUNT =
             "SELECT COUNT(*) FROM votes WHERE paper_id = ?";
 
+    private static final String SQL_DELETE_VOTE =
+            "DELETE FROM votes WHERE paper_id = ? AND user_id = ?";
+
     private static final String SQL_GET_USER_VOTED_PAPERS =
             "SELECT paper_id FROM votes WHERE user_id = ?";
 
@@ -113,6 +116,25 @@ public class VoteDAO {
         } catch (SQLException e) {
             System.err.println("ERROR in addMark for paper " + paperId + ", user " + userId);
             e.printStackTrace();
+        }
+    }
+
+    public boolean removeVote(int paperId, int userId) throws SQLException {
+        if (paperId <= 0 || userId <= 0) {
+            throw new IllegalArgumentException("Paper ID and User ID must be positive integers.");
+        }
+
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_DELETE_VOTE)) {
+
+            statement.setInt(1, paperId);
+            statement.setInt(2, userId);
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Database error while removing vote for paper ID: " + paperId + ", user ID: " + userId);
+            e.printStackTrace();
+            throw e;
         }
     }
 

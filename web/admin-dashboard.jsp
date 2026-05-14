@@ -1,408 +1,740 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.paperwise.model.User" %>
 <%@ page import="com.paperwise.model.Paper" %>
+<%@ page import="com.paperwise.model.PaperRequest" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%
     User loggedInUser = (User) session.getAttribute("loggedInUser");
     if (loggedInUser == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
+
     @SuppressWarnings("unchecked")
     List<Paper> papers = (List<Paper>) request.getAttribute("papers");
+
+    @SuppressWarnings("unchecked")
+    List<PaperRequest> requests = (List<PaperRequest>) request.getAttribute("requests");
+
+    int totalStudents    = request.getAttribute("totalStudents")    != null ? (int) request.getAttribute("totalStudents")    : 0;
+    int totalUsefulMarks = request.getAttribute("totalUsefulMarks") != null ? (int) request.getAttribute("totalUsefulMarks") : 0;
+    int pendingCount     = request.getAttribute("pendingRequestsCount") != null ? (int) request.getAttribute("pendingRequestsCount") : 0;
+    int easyCount        = request.getAttribute("easyCount")   != null ? (int) request.getAttribute("easyCount")   : 0;
+    int mediumCount      = request.getAttribute("mediumCount") != null ? (int) request.getAttribute("mediumCount") : 0;
+    int hardCount        = request.getAttribute("hardCount")   != null ? (int) request.getAttribute("hardCount")   : 0;
+    int totalDiff        = easyCount + mediumCount + hardCount;
+    int easyPct   = totalDiff > 0 ? (int) Math.round(easyCount   * 100.0 / totalDiff) : 0;
+    int mediumPct = totalDiff > 0 ? (int) Math.round(mediumCount * 100.0 / totalDiff) : 0;
+    int hardPct   = totalDiff > 0 ? (int) Math.round(hardCount   * 100.0 / totalDiff) : 0;
+
+    String username = loggedInUser.getUsername();
+    String initials = username.length() >= 2
+        ? username.substring(0, 2).toUpperCase()
+        : username.toUpperCase();
+
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    String currentMonthYear = java.time.format.DateTimeFormatter.ofPattern("MMM yyyy")
+        .format(java.time.LocalDate.now());
 %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - PaperWise</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
     <style>
-        * { box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f7fafc;
-            margin: 0;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
         }
-        .container {
-            max-width: 1500px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+        /* ═══════════════════════════════════════
+           SIDEBAR
+        ═══════════════════════════════════════ */
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: #0d1b2a;
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
         }
-        h1 { color: #1a202c; margin-bottom: 8px; }
-        .user-info { color: #718096; margin-bottom: 24px; }
-        .success-message {
-            background: #e6ffed;
-            border-left: 4px solid #38a169;
-            color: #22543d;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            font-size: 14px;
+
+        /* Logo */
+        .sidebar-logo {
             display: flex;
             align-items: center;
-            animation: slideDown 0.3s ease-out;
+            gap: 10px;
+            padding: 20px 18px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .logo-sq {
+            width: 34px; height: 34px;
+            background: #1a3a5c;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
-        .success-message::before { content: "OK"; margin-right: 8px; font-weight: bold; }
-        .error-message {
-            background: #fee;
-            border-left: 4px solid #e53e3e;
-            color: #c53030;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            font-size: 14px;
+        .logo-sq i { font-size: 15px; color: #fff; margin: 0; }
+        .logo-text { display: flex; flex-direction: column; }
+        .logo-text .app-name  { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .logo-text .app-sub   { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+        /* Nav */
+        .nav-section { padding: 14px 0 4px; }
+        .nav-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 0 18px 6px;
         }
-        .actions {
+        .nav-item {
             display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 12px 24px;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            margin: 1px 8px;
             border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.55);
             text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: inline-block;
-            border: none;
             cursor: pointer;
-            font-size: 14px;
+            transition: background 0.15s, color 0.15s;
+            position: relative;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
-        .btn-secondary { background: #e2e8f0; color: #2d3748; }
-        .btn-secondary:hover { background: #cbd5e0; }
-        .btn-small { padding: 5px 10px; font-size: 13px; }
-        .btn-view     { background: #4299e1; color: white; }
-        .btn-view:hover { background: #3182ce; }
-        .btn-download { background: #48bb78; color: white; }
-        .btn-download:hover { background: #38a169; }
-        .btn-edit     { background: #ed8936; color: white; }
-        .btn-edit:hover { background: #dd6b20; }
-        .btn-delete   { background: #e53e3e; color: white; }
-        .btn-delete:hover { background: #c53030; }
-        .btn-stats    { background: #805ad5; color: white; }
-        .btn-stats:hover { background: #6b46c1; }
-        .content { margin-top: 32px; }
-        .papers-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        .papers-table th {
-            background: #f7fafc;
-            padding: 11px 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #2d3748;
-            border-bottom: 2px solid #e2e8f0;
-            white-space: nowrap;
-        }
-        .papers-table td {
-            padding: 11px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #4a5568;
-            vertical-align: middle;
-        }
-        .papers-table tr:hover { background: #f7fafc; }
-        .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+        .nav-item i { font-size: 13px; margin: 0; width: 16px; text-align: center; flex-shrink: 0; }
+        .nav-item:hover  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+        .nav-item.active { background: #1a3a5c; color: #fff; }
+        .nav-badge {
+            margin-left: auto;
+            background: #e53e3e;
+            color: #fff;
+            font-size: 10px;
+            border-radius: 10px;
+            padding: 1px 6px;
             font-weight: 600;
         }
-        .badge-easy   { background: #c6f6d5; color: #276749; }
-        .badge-medium { background: #fefcbf; color: #744210; }
-        .badge-hard   { background: #fed7d7; color: #822727; }
-        .badge-mixed  { background: #e9d8fd; color: #553c9a; }
-        .badge-none   { background: #e2e8f0; color: #718096; }
-        .vote-count { font-weight: 600; color: #2d3748; }
-        .avg-score  { font-weight: 600; color: #553c9a; }
-        /* Progress bar */
-        .diff-bar { display: flex; height: 6px; border-radius: 4px; overflow: hidden; width: 80px; margin-top: 4px; }
-        .diff-bar-easy   { background: #48bb78; }
-        .diff-bar-medium { background: #ecc94b; }
-        .diff-bar-hard   { background: #e53e3e; }
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+
+        /* Sidebar bottom */
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 12px 8px;
+        }
+        .user-row {
+            display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 9px;
+            padding: 6px 10px 10px;
         }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: white;
-            border-radius: 12px;
-            padding: 32px;
-            width: 420px;
-            max-width: 95vw;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        .avatar {
+            width: 32px; height: 32px;
+            background: #1a3a5c;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
         }
-        .modal h3 { margin: 0 0 4px; color: #1a202c; }
-        .modal .subtitle { color: #718096; font-size: 13px; margin-bottom: 24px; }
-        .modal-close {
-            float: right;
+        .user-meta .u-name { font-size: 12px; font-weight: 700; color: #fff; }
+        .user-meta .u-role { font-size: 10px; color: rgba(255,255,255,0.35); }
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 14px;
+            margin: 0 0;
+            border-radius: 8px;
             background: none;
             border: none;
-            font-size: 20px;
             cursor: pointer;
-            color: #718096;
-            margin-top: -4px;
+            font-size: 13px;
+            color: rgba(255,100,100,0.7);
+            transition: background 0.15s, color 0.15s;
+            text-align: left;
         }
-        .stat-row { margin-bottom: 16px; }
-        .stat-label {
+        .logout-btn i { font-size: 13px; margin: 0; }
+        .logout-btn:hover { background: rgba(255,80,80,0.1); color: #ff6b6b; }
+
+        /* ═══════════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════════ */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Top bar */
+        .topbar {
+            background: #fff;
+            height: 56px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e8edf2;
+            flex-shrink: 0;
+        }
+        .topbar-title { font-size: 16px; font-weight: 600; color: #0d1b2a; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .pill-date {
+            background: #fff4e0;
+            color: #854f0b;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .pill-date i { font-size: 11px; margin: 0; }
+        .bell-btn {
+            position: relative;
+            width: 34px; height: 34px;
+            background: #f0f4f8;
+            border: none;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #4f7396;
+        }
+        .bell-btn i { font-size: 14px; margin: 0; }
+        .bell-dot {
+            position: absolute;
+            top: 6px; right: 6px;
+            width: 7px; height: 7px;
+            background: #e53e3e;
+            border-radius: 50%;
+            border: 1.5px solid #fff;
+        }
+
+        /* Content area */
+        .content { padding: 20px 24px; flex: 1; }
+
+        /* Alerts */
+        .alert-success {
+            background: #f0fff4; border: 1px solid #9ae6b4; color: #276749;
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 13px; display: flex; align-items: center; gap: 8px;
+        }
+        .alert-error {
+            background: #fff0f0; border: 1px solid #f5c6cb; color: #c0392b;
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 13px; display: flex; align-items: center; gap: 8px;
+        }
+        .alert-success i, .alert-error i { font-size: 13px; margin: 0; flex-shrink: 0; }
+
+        /* ═══════════════════════════════════════
+           STAT CARDS
+        ═══════════════════════════════════════ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e8edf2;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .stat-icon {
+            width: 36px; height: 36px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-icon i { font-size: 15px; margin: 0; }
+        .stat-icon.blue   { background: #eef2ff; color: #4338ca; }
+        .stat-icon.green  { background: #f0fdf4; color: #166534; }
+        .stat-icon.orange { background: #fff7ed; color: #9a3412; }
+        .stat-icon.pink   { background: #fff0f6; color: #9d174d; }
+        .stat-body .stat-num   { font-size: 22px; font-weight: 700; color: #0d1b2a; line-height: 1.1; }
+        .stat-body .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+        /* ═══════════════════════════════════════
+           PAPERS TABLE SECTION
+        ═══════════════════════════════════════ */
+        .section-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e8edf2;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        .section-header-left { display: flex; align-items: center; gap: 8px; }
+        .section-title { font-size: 14px; font-weight: 600; color: #0d1b2a; }
+        .count-pill {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .count-pill.indigo { background: #eef2ff; color: #3730a3; }
+        .count-pill.amber  { background: #fff4e0; color: #854f0b; }
+
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #1a3a5c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-upload i { font-size: 11px; margin: 0; }
+        .btn-upload:hover { background: #0d2a45; }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table thead tr { background: #f8fafc; }
+        .data-table th {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 18px;
+            text-align: left;
+            border-bottom: 1px solid #e8edf2;
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f4f8;
+            font-size: 13px;
+            color: #1f2937;
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover td { background: #f8fafc; }
+        .td-subject { font-weight: 600; color: #0d1b2a; }
+
+        .code-pill { background: #eef2ff; color: #3730a3; font-size: 11px; border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+        .year-pill  { background: #f0f9ff; color: #0369a1; font-size: 11px; border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+
+        .diff-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .diff-easy   { background: #f0fdf4; color: #166534; }
+        .diff-medium { background: #fff7ed; color: #9a3412; }
+        .diff-hard   { background: #fef2f2; color: #991b1b; }
+        .diff-none   { background: #f3f4f6; color: #6b7280; }
+
+        .action-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+        .act-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .act-btn i { font-size: 10px; margin: 0; }
+        .act-btn:hover { opacity: 0.82; }
+        .act-view     { background: #eff6ff; color: #1d4ed8; }
+        .act-download { background: #f0fdf4; color: #166534; }
+        .act-edit     { background: #fff7ed; color: #9a3412; }
+        .act-delete   { background: #fef2f2; color: #991b1b; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #9ca3af;
+        }
+        .empty-state i { font-size: 40px; margin: 0 0 12px; display: block; }
+        .empty-state p { font-size: 13px; }
+
+        /* ═══════════════════════════════════════
+           BOTTOM TWO-PANEL ROW
+        ═══════════════════════════════════════ */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Recent requests */
+        .req-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        .req-row:last-child { border-bottom: none; }
+        .req-left .req-subject { font-size: 12px; color: #374151; font-weight: 500; }
+        .req-left .req-meta    { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .status-pill {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .s-pending  { background: #fff4e0; color: #854f0b; }
+        .s-approved { background: #f0fdf4; color: #166534; }
+        .s-rejected { background: #fef2f2; color: #991b1b; }
+        .s-completed{ background: #eff6ff; color: #1d4ed8; }
+
+        /* Difficulty breakdown */
+        .diff-row { padding: 10px 18px; border-bottom: 1px solid #f0f4f8; }
+        .diff-row:last-child { border-bottom: none; }
+        .diff-row-header {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 6px;
         }
+        .diff-row-header span:last-child { color: #6b7280; font-size: 11px; }
         .progress-track {
-            background: #e2e8f0;
+            background: #f0f4f8;
+            height: 8px;
             border-radius: 6px;
-            height: 10px;
             overflow: hidden;
         }
-        .progress-fill {
-            height: 100%;
-            border-radius: 6px;
-            transition: width 0.4s ease;
-        }
-        .fill-easy   { background: #48bb78; }
-        .fill-medium { background: #ecc94b; }
+        .progress-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+        .fill-easy   { background: #1d9e75; }
+        .fill-medium { background: #e97c30; }
         .fill-hard   { background: #e53e3e; }
-        .modal-summary {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #4a5568;
-        }
-        .modal-summary strong { color: #1a202c; }
-        .empty-state { text-align: center; padding: 60px 20px; color: #718096; }
-        .empty-state h3 { margin-bottom: 8px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>Admin Dashboard</h1>
-    <div class="user-info">
-        <p>Welcome, <strong><%= loggedInUser.getUsername() %></strong> &mdash; <%= loggedInUser.getRole() %></p>
+
+<!-- ═══════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════ -->
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-sq"><i class="fa-solid fa-book-open"></i></div>
+        <div class="logo-text">
+            <span class="app-name">PaperWise</span>
+            <span class="app-sub">Admin Panel</span>
+        </div>
     </div>
 
-    <%
-        String successMessage = (String) session.getAttribute("successMessage");
-        if (successMessage != null) { session.removeAttribute("successMessage");
-    %>
-        <div class="success-message" id="successMessage"><%= successMessage %></div>
-    <% } %>
-    <%
-        String errorMessage = (String) request.getAttribute("errorMessage");
-        if (errorMessage != null) {
-    %>
-        <div class="error-message"><%= errorMessage %></div>
-    <% } %>
-
-    <div class="actions">
-        <a href="${pageContext.request.contextPath}/uploadPaper" class="btn btn-primary">Upload Paper</a>
-        <a href="${pageContext.request.contextPath}/adminRequests" class="btn btn-primary">Manage Requests</a>
-        <a href="${pageContext.request.contextPath}/logout" class="btn btn-secondary">Logout</a>
+    <div class="nav-section">
+        <p class="nav-label">Main</p>
+        <a href="${pageContext.request.contextPath}/adminDashboard" class="nav-item active">
+            <i class="fa-solid fa-table-cells-large"></i> Dashboard
+        </a>
+        <a href="${pageContext.request.contextPath}/allPapers" class="nav-item">
+            <i class="fa-regular fa-file-lines"></i> All Papers
+        </a>
+        <a href="${pageContext.request.contextPath}/uploadPaper" class="nav-item">
+            <i class="fa-solid fa-upload"></i> Upload Paper
+        </a>
     </div>
 
-    <div class="content">
-        <h2>Uploaded Papers (<%= papers != null ? papers.size() : 0 %>)</h2>
-
-        <% if (papers != null && !papers.isEmpty()) { %>
-        <table class="papers-table">
-            <thead>
-                <tr>
-                    <th>Subject Name</th>
-                    <th>Subject Code</th>
-                    <th>Year</th>
-                    <th>Chapter</th>
-                    <th>Uploaded By</th>
-                    <th>Total Votes</th>
-                    <th>Difficulty</th>
-                    <th>Avg Difficulty</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            <% for (Paper paper : papers) {
-                int total = paper.getEasyCount() + paper.getMediumCount() + paper.getHardCount();
-                int easyPct   = total > 0 ? (int) Math.round(paper.getEasyCount()   * 100.0 / total) : 0;
-                int mediumPct = total > 0 ? (int) Math.round(paper.getMediumCount() * 100.0 / total) : 0;
-                int hardPct   = total > 0 ? 100 - easyPct - mediumPct : 0;
-                String label  = paper.getDifficultyLabel() != null ? paper.getDifficultyLabel() : "Not Rated";
-                String badgeClass = "badge-none";
-                if ("Easy".equalsIgnoreCase(label))        badgeClass = "badge-easy";
-                else if ("Medium".equalsIgnoreCase(label)) badgeClass = "badge-medium";
-                else if ("Hard".equalsIgnoreCase(label))   badgeClass = "badge-hard";
-                else if ("Mixed".equalsIgnoreCase(label))  badgeClass = "badge-mixed";
-                double avg = paper.getAvgDifficulty() > 0 ? paper.getAvgDifficulty() : paper.getAvgDifficultyScore();
-            %>
-                <tr>
-                    <td><%= paper.getSubjectName() %></td>
-                    <td><%= paper.getSubjectCode() %></td>
-                    <td><%= paper.getYear() %></td>
-                    <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
-                    <td><%= paper.getUploaderUsername() != null ? paper.getUploaderUsername() : "Unknown" %></td>
-                    <td><span class="vote-count"><%= paper.getTotalVotes() %></span></td>
-                    <td>
-                        <span class="badge <%= badgeClass %>"><%= label %></span>
-                        <% if (total > 0) { %>
-                        <div class="diff-bar">
-                            <div class="diff-bar-easy"   style="width:<%= easyPct %>%"></div>
-                            <div class="diff-bar-medium" style="width:<%= mediumPct %>%"></div>
-                            <div class="diff-bar-hard"   style="width:<%= hardPct %>%"></div>
-                        </div>
-                        <% } %>
-                    </td>
-                    <td>
-                        <% if (avg > 0) { %>
-                            <span class="avg-score"><%= String.format("%.2f", avg) %> / 3</span>
-                        <% } else { %>
-                            <span style="color:#a0aec0">-</span>
-                        <% } %>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>"
-                               target="_blank" class="btn btn-small btn-view">View</a>
-                            <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>&download=true"
-                               class="btn btn-small btn-download">Download</a>
-                            <a href="${pageContext.request.contextPath}/editPaper?paperId=<%= paper.getPaperId() %>"
-                               class="btn btn-small btn-edit">Edit</a>
-                            <button class="btn btn-small btn-stats"
-                                onclick="openStats(
-                                    '<%= paper.getSubjectName().replace("'", "\\'") %>',
-                                    '<%= paper.getSubjectCode() %>',
-                                    <%= paper.getTotalVotes() %>,
-                                    <%= paper.getEasyCount() %>,
-                                    <%= paper.getMediumCount() %>,
-                                    <%= paper.getHardCount() %>,
-                                    '<%= String.format("%.2f", avg) %>',
-                                    '<%= label %>'
-                                )">View Stats</button>
-                            <form action="${pageContext.request.contextPath}/deletePaper" method="post"
-                                  style="display:inline;"
-                                  onsubmit="return confirm('Delete this paper? This cannot be undone.');">
-                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
-                                <button type="submit" class="btn btn-small btn-delete">Delete</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
+    <div class="nav-section">
+        <p class="nav-label">Manage</p>
+        <a href="${pageContext.request.contextPath}/adminRequests" class="nav-item">
+            <i class="fa-solid fa-clipboard-list"></i> Requests
+            <% if (pendingCount > 0) { %>
+                <span class="nav-badge"><%= pendingCount %></span>
             <% } %>
-            </tbody>
-        </table>
-        <% } else { %>
-        <div class="empty-state">
-            <h3>No Papers Yet</h3>
-            <p>Upload your first paper to get started.</p>
+        </a>
+        <a href="${pageContext.request.contextPath}/students" class="nav-item">
+            <i class="fa-solid fa-users"></i> Students
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fa-solid fa-chart-bar"></i> Analytics
+        </a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="user-row">
+            <div class="avatar"><%= initials %></div>
+            <div class="user-meta">
+                <div class="u-name"><%= username %></div>
+                <div class="u-role">Administrator</div>
+            </div>
         </div>
+        <form action="${pageContext.request.contextPath}/logout" method="post">
+            <button type="submit" class="logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </form>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════ -->
+<div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+        <span class="topbar-title">Dashboard Overview</span>
+        <div class="topbar-right">
+            <span class="pill-date">
+                <i class="fa-regular fa-calendar"></i> <%= currentMonthYear %>
+            </span>
+            <button class="bell-btn" title="Notifications">
+                <i class="fa-regular fa-bell"></i>
+                <% if (pendingCount > 0) { %><span class="bell-dot"></span><% } %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+        <%-- Flash messages --%>
+        <%
+            String successMsg = (String) session.getAttribute("successMessage");
+            if (successMsg != null) { session.removeAttribute("successMessage"); %>
+            <div class="alert-success" id="flashMsg">
+                <i class="fa-solid fa-circle-check"></i> <%= successMsg %>
+            </div>
         <% } %>
-    </div>
-</div>
+        <%
+            String errorMsg = (String) request.getAttribute("errorMessage");
+            if (errorMsg != null) { %>
+            <div class="alert-error">
+                <i class="fa-solid fa-circle-exclamation"></i> <%= errorMsg %>
+            </div>
+        <% } %>
 
-<!-- Stats Modal -->
-<div class="modal-overlay" id="statsModal" onclick="closeStatsOnOverlay(event)">
-    <div class="modal">
-        <button class="modal-close" onclick="closeStats()">&times;</button>
-        <h3 id="modal-title"></h3>
-        <div class="modal-subtitle" id="modal-subtitle"></div>
-
-        <div class="stat-row">
-            <div class="stat-label">
-                <span>Easy</span>
-                <span id="easy-label"></span>
+        <!-- Stat cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-regular fa-copy"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= papers != null ? papers.size() : 0 %></div>
+                    <div class="stat-label">Total Papers</div>
+                </div>
             </div>
-            <div class="progress-track">
-                <div class="progress-fill fill-easy" id="easy-bar"></div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= totalStudents %></div>
+                    <div class="stat-label">Total Students</div>
+                </div>
             </div>
-        </div>
-        <div class="stat-row">
-            <div class="stat-label">
-                <span>Medium</span>
-                <span id="medium-label"></span>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-clipboard-list"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= pendingCount %></div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
             </div>
-            <div class="progress-track">
-                <div class="progress-fill fill-medium" id="medium-bar"></div>
-            </div>
-        </div>
-        <div class="stat-row">
-            <div class="stat-label">
-                <span>Hard</span>
-                <span id="hard-label"></span>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill fill-hard" id="hard-bar"></div>
+            <div class="stat-card">
+                <div class="stat-icon pink"><i class="fa-solid fa-heart"></i></div>
+                <div class="stat-body">
+                    <div class="stat-num"><%= totalUsefulMarks %></div>
+                    <div class="stat-label">Total Useful Marks</div>
+                </div>
             </div>
         </div>
 
-        <div class="modal-summary">
-            <span>Total useful votes: <strong id="modal-total-votes"></strong></span>
-            <span>Avg difficulty: <strong id="modal-avg"></strong></span>
+        <!-- Papers table -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <span class="section-title">Uploaded Papers</span>
+                    <span class="count-pill indigo"><%= papers != null ? papers.size() : 0 %></span>
+                </div>
+                <a href="${pageContext.request.contextPath}/uploadPaper" class="btn-upload">
+                    <i class="fa-solid fa-plus"></i> Upload Paper
+                </a>
+            </div>
+
+            <% if (papers != null && !papers.isEmpty()) { %>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Subject Name</th>
+                        <th>Code</th>
+                        <th>Year</th>
+                        <th>Chapter</th>
+                        <th>Exam Type</th>
+                        <th>Uploaded By</th>
+                        <th>Difficulty</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <% for (Paper paper : papers) {
+                    String diffLabel = paper.getDifficultyLabel();
+                    if (diffLabel == null || diffLabel.isEmpty()) diffLabel = "Not Rated";
+                    String diffCls = "diff-none";
+                    if ("Easy".equalsIgnoreCase(diffLabel))   diffCls = "diff-easy";
+                    else if ("Medium".equalsIgnoreCase(diffLabel)) diffCls = "diff-medium";
+                    else if ("Hard".equalsIgnoreCase(diffLabel))   diffCls = "diff-hard";
+                %>
+                    <tr>
+                        <td class="td-subject"><%= paper.getSubjectName() %></td>
+                        <td><span class="code-pill"><%= paper.getSubjectCode() %></span></td>
+                        <td><span class="year-pill"><%= paper.getYear() %></span></td>
+                        <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
+                        <td>
+                            <% if (paper.getExamType() != null && !paper.getExamType().isEmpty()) { %>
+                                <span style="background:#e0e7ff;color:#3730a3;font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;display:inline-block;white-space:nowrap"><%= paper.getExamType() %></span>
+                            <% } else { %>
+                                <span style="color:#9ca3af;font-size:12px">—</span>
+                            <% } %>
+                        </td>
+                        <td><%= paper.getUploaderUsername() != null ? paper.getUploaderUsername() : "Unknown" %></td>
+                        <td><span class="diff-badge <%= diffCls %>"><%= diffLabel %></span></td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>"
+                                   target="_blank" class="act-btn act-view">
+                                    <i class="fa-regular fa-eye"></i> View
+                                </a>
+                                <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>&download=true"
+                                   class="act-btn act-download">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </a>
+                                <a href="${pageContext.request.contextPath}/editPaper?paperId=<%= paper.getPaperId() %>"
+                                   class="act-btn act-edit">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </a>
+                                <form action="${pageContext.request.contextPath}/deletePaper" method="post"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Delete this paper? This cannot be undone.');">
+                                    <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
+                                    <button type="submit" class="act-btn act-delete">
+                                        <i class="fa-solid fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <% } %>
+                </tbody>
+            </table>
+            <% } else { %>
+            <div class="empty-state">
+                <i class="fa-regular fa-folder-open" style="color:#cbd5e0;"></i>
+                <p>No papers uploaded yet.</p>
+            </div>
+            <% } %>
         </div>
-    </div>
-</div>
+
+        <!-- Bottom row: Recent Requests full width -->
+        <div class="bottom-grid" style="grid-template-columns: 1fr;">
+
+            <!-- Recent Requests -->
+            <div class="section-card" style="margin-bottom:0;">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <span class="section-title">Recent Requests</span>
+                        <span class="count-pill amber"><%= pendingCount %> pending</span>
+                    </div>
+                </div>
+                <% if (requests != null && !requests.isEmpty()) {
+                    int shown = 0;
+                    for (PaperRequest req : requests) {
+                        if (shown >= 5) break;
+                        String st = req.getStatus() != null ? req.getStatus().toLowerCase() : "pending";
+                        String stCls = "s-pending";
+                        if ("approved".equals(st))  stCls = "s-approved";
+                        else if ("rejected".equals(st))  stCls = "s-rejected";
+                        else if ("completed".equals(st)) stCls = "s-completed";
+                        String reqTime = req.getCreatedAt() != null ? req.getCreatedAt().format(dtf) : "-";
+                        shown++;
+                %>
+                    <div class="req-row">
+                        <div class="req-left">
+                            <div class="req-subject"><%= req.getSubjectName() %> (<%= req.getSubjectCode() %>)</div>
+                            <div class="req-meta"><%= req.getRequesterUsername() != null ? req.getRequesterUsername() : "Unknown" %> &middot; <%= reqTime %></div>
+                        </div>
+                        <span class="status-pill <%= stCls %>"><%= st %></span>
+                    </div>
+                <% } } else { %>
+                    <div class="empty-state" style="padding:28px 20px;">
+                        <i class="fa-regular fa-folder-open" style="color:#cbd5e0; font-size:28px;"></i>
+                        <p>No requests yet.</p>
+                    </div>
+                <% } %>
+            </div>
+
+        </div><!-- /.bottom-grid -->
+    </div><!-- /.content -->
+</div><!-- /.main -->
 
 <script>
-    function openStats(name, code, totalVotes, easy, medium, hard, avg, label) {
-        document.getElementById('modal-title').textContent = name + ' (' + code + ')';
-        document.getElementById('modal-subtitle').textContent = 'Difficulty: ' + label;
-        const total = easy + medium + hard;
-        const easyPct   = total > 0 ? Math.round(easy   / total * 100) : 0;
-        const mediumPct = total > 0 ? Math.round(medium / total * 100) : 0;
-        const hardPct   = total > 0 ? 100 - easyPct - mediumPct : 0;
-        document.getElementById('easy-label').textContent   = easy   + ' votes (' + easyPct   + '%)';
-        document.getElementById('medium-label').textContent = medium + ' votes (' + mediumPct + '%)';
-        document.getElementById('hard-label').textContent   = hard   + ' votes (' + hardPct   + '%)';
-        document.getElementById('easy-bar').style.width   = easyPct   + '%';
-        document.getElementById('medium-bar').style.width = mediumPct + '%';
-        document.getElementById('hard-bar').style.width   = hardPct   + '%';
-        document.getElementById('modal-total-votes').textContent = totalVotes;
-        document.getElementById('modal-avg').textContent = total > 0 ? avg + ' / 3' : 'Not rated';
-        document.getElementById('statsModal').classList.add('active');
-    }
-    function closeStats() {
-        document.getElementById('statsModal').classList.remove('active');
-    }
-    function closeStatsOnOverlay(e) {
-        if (e.target === document.getElementById('statsModal')) closeStats();
-    }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStats(); });
-
-    const successMsg = document.getElementById('successMessage');
-    if (successMsg) {
+    const flash = document.getElementById('flashMsg');
+    if (flash) {
         setTimeout(() => {
-            successMsg.style.transition = 'opacity 0.5s ease-out';
-            successMsg.style.opacity = '0';
-            setTimeout(() => successMsg.style.display = 'none', 500);
+            flash.style.transition = 'opacity 0.5s';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 500);
         }, 3000);
     }
+
+    function showToast(msg) {
+        const t = document.getElementById('pwToast');
+        document.getElementById('pwToastMsg').textContent = msg;
+        t.style.opacity = '1';
+        t.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            t.style.opacity = '0';
+            t.style.transform = 'translateY(8px)';
+        }, 3500);
+    }
+
+    window.addEventListener('load', function () {
+        const p = new URLSearchParams(window.location.search);
+        if (p.get('uploaded') === 'true') {
+            showToast('Paper uploaded successfully!');
+            // Clean URL so refresh doesn't re-trigger toast
+            if (window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+        }
+        if (p.get('updated') === 'true') {
+            showToast('Paper updated successfully!');
+            if (window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+        }
+    });
 </script>
+
+<div id="pwToast" style="position:fixed;bottom:20px;right:20px;background:#0f2744;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:999;">
+    <i class="fa-solid fa-circle-check" style="font-size:16px;color:#4ade80;margin:0;"></i>
+    <span id="pwToastMsg">Done!</span>
+</div>
 </body>
 </html>
