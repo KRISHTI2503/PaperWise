@@ -43,7 +43,7 @@
 
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #f1f4f9;
+            background: #f0f4f8;
             min-height: 100vh;
             display: flex;
         }
@@ -52,7 +52,7 @@
         .sidebar {
             width: 220px;
             min-width: 220px;
-            background: #0f2744;
+            background: #0d1b2a;
             min-height: 100vh;
             position: sticky;
             top: 0;
@@ -95,7 +95,7 @@
         }
         .nav-item i { font-size: 15px; margin: 0; width: 18px; text-align: center; flex-shrink: 0; }
         .nav-item:hover  { background: rgba(255,255,255,0.07); color: #fff; }
-        .nav-item.active { background: rgba(255,255,255,0.13); color: #fff; font-weight: 500; }
+        .nav-item.active { background: #1a3a5c; color: #fff; font-weight: 500; }
 
         .sidebar-bottom {
             margin-top: auto;
@@ -116,14 +116,16 @@
         }
         .user-meta .u-name { font-size: 12.5px; color: #fff; font-weight: 500; }
         .user-meta .u-role { font-size: 11px; color: rgba(255,255,255,0.4); }
-        .logout-link {
-            display: flex; align-items: center; gap: 7px;
-            padding: 0.45rem 1.1rem;
-            color: #f87171; font-size: 12px; text-decoration: none;
-            transition: background 0.15s;
+        .logout-btn {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 14px; border-radius: 8px;
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; color: rgba(255,100,100,0.7);
+            transition: background 0.15s, color 0.15s; text-align: left;
+            font-family: inherit;
         }
-        .logout-link i { font-size: 14px; margin: 0; }
-        .logout-link:hover { background: rgba(255,80,80,0.08); }
+        .logout-btn i { font-size: 13px; margin: 0; }
+        .logout-btn:hover { background: rgba(255,80,80,0.1); color: #ff6b6b; }
 
         /* ═══════════ MAIN ═══════════ */
         .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -131,12 +133,13 @@
         /* Top bar */
         .topbar {
             background: #fff;
+            height: 56px;
             border-bottom: 1px solid #e5e7eb;
-            padding: 0.85rem 1.6rem;
+            padding: 0 1.6rem;
             display: flex; align-items: center; justify-content: space-between;
             flex-shrink: 0;
         }
-        .topbar-left .page-title { font-size: 17px; font-weight: 700; color: #0f2744; }
+        .topbar-left .page-title { font-size: 16px; font-weight: 600; color: #0d1b2a; }
         .topbar-left .page-sub   { font-size: 12.5px; color: #8a97a8; margin-top: 1px; }
         .topbar-right { display: flex; align-items: center; gap: 10px; }
         .date-chip {
@@ -188,17 +191,17 @@
             display: flex; align-items: center; gap: 12px;
         }
         .stat-icon {
-            width: 38px; height: 38px;
+            width: 36px; height: 36px;
             border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .stat-icon i { font-size: 16px; margin: 0; }
+        .stat-icon i { font-size: 15px; margin: 0; }
         .stat-icon.blue   { background: #dbeafe; color: #2563eb; }
         .stat-icon.amber  { background: #fef3c7; color: #d97706; }
         .stat-icon.green  { background: #dcfce7; color: #16a34a; }
         .stat-icon.red    { background: #fee2e2; color: #dc2626; }
-        .stat-num   { font-size: 20px; font-weight: 700; color: #0f2744; line-height: 1.1; }
+        .stat-num   { font-size: 22px; font-weight: 700; color: #0d1b2a; line-height: 1.1; }
         .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
 
         /* ═══════════ TABLE CARD ═══════════ */
@@ -409,10 +412,11 @@
                 <div class="u-role">Administrator</div>
             </div>
         </div>
-        <a href="${pageContext.request.contextPath}/logout" class="logout-link">
-            <i class="ti ti-logout"></i> Logout
-        </a>
-    </div>
+        <form action="${pageContext.request.contextPath}/logout" method="post">
+            <button type="submit" class="logout-btn">
+                <i class="ti ti-logout"></i> Logout
+            </button>
+        </form>    </div>
 
 </aside>
 
