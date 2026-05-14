@@ -15,11 +15,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 
-/**
- * Handles difficulty rating for students.
- * POST /student/rateDifficulty  { paperId, difficulty }
- * Returns JSON: { success, easy, medium, hard, userVote }
- */
 @WebServlet("/student/rateDifficulty")
 public class StudentRateDifficultyServlet extends HttpServlet {
 
@@ -40,63 +35,49 @@ public class StudentRateDifficultyServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Session guard
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"success\":false,\"error\":\"Not logged in\"}");
             return;
         }
+
         User user = (User) session.getAttribute("loggedInUser");
         if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"success\":false,\"error\":\"Not logged in\"}");
             return;
         }
 
-        // Parse params
-        String idParam = request.getParameter("paperId");
-        String level   = request.getParameter("difficulty");
+        String paperIdParam = request.getParameter("paperId");
+        String level        = request.getParameter("difficulty");
 
-        if (idParam == null || idParam.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
             out.print("{\"success\":false,\"error\":\"Missing paperId\"}");
             return;
         }
 
-        String normalizedLevel = level != null ? level.trim().toLowerCase() : "";
+        String normalizedLevel = (level != null) ? level.trim().toLowerCase() : "";
         if (!VALID_LEVELS.contains(normalizedLevel)) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"success\":false,\"error\":\"Invalid difficulty level\"}");
             return;
         }
 
-        int paperId;
         try {
-            paperId = Integer.parseInt(idParam.trim());
-        } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"success\":false,\"error\":\"Invalid paperId\"}");
-            return;
-        }
-
-        try {
-            // UPSERT — updates if user already voted on this paper
+            int paperId = Integer.parseInt(paperIdParam.trim());
             difficultyVoteDAO.addOrUpdateDifficultyVote(paperId, user.getUserId(), normalizedLevel);
 
-            // Fetch updated counts
+            // Return updated counts
             DifficultyStats stats = difficultyVoteDAO.getDifficultyStatsObject(paperId);
-
             out.print("{\"success\":true"
                     + ",\"easy\":"   + stats.getEasyCount()
                     + ",\"medium\":" + stats.getMediumCount()
                     + ",\"hard\":"   + stats.getHardCount()
-                    + ",\"userVote\":\"" + normalizedLevel + "\""
                     + "}");
 
+        } catch (NumberFormatException e) {
+            out.print("{\"success\":false,\"error\":\"Invalid paperId\"}");
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"success\":false,\"error\":\"Database error\"}");
+            e.printStackTrace();
+            out.print("{\"success\":false,\"error\":\"Server error\"}");
         }
     }
 }

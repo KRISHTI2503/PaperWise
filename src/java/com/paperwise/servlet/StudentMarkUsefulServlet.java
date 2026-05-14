@@ -12,18 +12,11 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 
-/**
- * Handles useful-mark toggle for students.
- * POST /student/markUseful  { paperId }
- * Returns JSON: { success, count, marked }
- */
 @WebServlet("/student/markUseful")
 public class StudentMarkUsefulServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
     private VoteDAO voteDAO;
 
     @Override
@@ -38,58 +31,48 @@ public class StudentMarkUsefulServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Session guard
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
-            return;
-        }
-        User user = (User) session.getAttribute("loggedInUser");
-        if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"success\":false,\"error\":\"Not logged in\"}");
             return;
         }
 
-        // Parse paperId
-        String idParam = request.getParameter("paperId");
-        if (idParam == null || idParam.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        User user = (User) session.getAttribute("loggedInUser");
+        if (user == null) {
+            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
+            return;
+        }
+
+        String paperIdParam = request.getParameter("paperId");
+        if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
             out.print("{\"success\":false,\"error\":\"Missing paperId\"}");
             return;
         }
 
-        int paperId;
         try {
-            paperId = Integer.parseInt(idParam.trim());
-        } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"success\":false,\"error\":\"Invalid paperId\"}");
-            return;
-        }
+            int paperId = Integer.parseInt(paperIdParam.trim());
+            int userId  = user.getUserId();
 
-        int userId = user.getUserId();
-
-        try {
-            boolean alreadyMarked = voteDAO.hasUserVoted(paperId, userId);
+            boolean alreadyMarked = voteDAO.hasUserMarked(paperId, userId);
+            boolean nowMarked;
 
             if (alreadyMarked) {
-                // Toggle off — remove the vote
+                // Toggle off
                 voteDAO.removeVote(paperId, userId);
+                nowMarked = false;
             } else {
-                // Toggle on — insert (ON CONFLICT DO NOTHING)
-                voteDAO.insertVote(paperId, userId);
+                voteDAO.addMark(paperId, userId);
+                nowMarked = true;
             }
 
-            boolean nowMarked = !alreadyMarked;
-            int newCount = voteDAO.getVoteCount(paperId);
+            int count = voteDAO.getVoteCount(paperId);
+            out.print("{\"success\":true,\"marked\":" + nowMarked + ",\"count\":" + count + "}");
 
-            out.print("{\"success\":true,\"count\":" + newCount + ",\"marked\":" + nowMarked + "}");
-
-        } catch (SQLException e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"success\":false,\"error\":\"Database error\"}");
+        } catch (NumberFormatException e) {
+            out.print("{\"success\":false,\"error\":\"Invalid paperId\"}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.print("{\"success\":false,\"error\":\"Server error\"}");
         }
     }
 }

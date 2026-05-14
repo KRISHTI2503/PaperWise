@@ -13,16 +13,10 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-/**
- * Handles deletion of a student's own pending paper request.
- * POST /student/deleteRequest  { requestId }
- * Returns JSON: { success }
- */
 @WebServlet("/student/deleteRequest")
 public class StudentDeleteRequestServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
     private PaperRequestDAO requestDAO;
 
     @Override
@@ -37,47 +31,39 @@ public class StudentDeleteRequestServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Session guard
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
-            return;
-        }
-        User user = (User) session.getAttribute("loggedInUser");
-        if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"success\":false,\"error\":\"Not logged in\"}");
             return;
         }
 
-        String idParam = request.getParameter("requestId");
-        if (idParam == null || idParam.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        User user = (User) session.getAttribute("loggedInUser");
+        if (user == null) {
+            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
+            return;
+        }
+
+        String requestIdParam = request.getParameter("requestId");
+        if (requestIdParam == null || requestIdParam.trim().isEmpty()) {
             out.print("{\"success\":false,\"error\":\"Missing requestId\"}");
             return;
         }
 
-        int requestId;
         try {
-            requestId = Integer.parseInt(idParam.trim());
-        } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"success\":false,\"error\":\"Invalid requestId\"}");
-            return;
-        }
-
-        try {
-            // deleteRequest checks user ownership — safe against IDOR
+            int requestId = Integer.parseInt(requestIdParam.trim());
             boolean deleted = requestDAO.deleteRequest(requestId, user.getUserId());
+
             if (deleted) {
                 out.print("{\"success\":true}");
             } else {
-                out.print("{\"success\":false,\"error\":\"Request not found or already deleted.\"}");
+                out.print("{\"success\":false,\"error\":\"Request not found or not yours\"}");
             }
+
+        } catch (NumberFormatException e) {
+            out.print("{\"success\":false,\"error\":\"Invalid requestId\"}");
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"success\":false,\"error\":\"Database error.\"}");
+            e.printStackTrace();
+            out.print("{\"success\":false,\"error\":\"Server error\"}");
         }
     }
 }
