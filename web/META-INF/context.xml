@@ -3,7 +3,7 @@
     
     <Resource name="jdbc/paperwise"
               auth="Container"
-              type="jakarta.sql.DataSource"
+              type="javax.sql.DataSource"
               driverClassName="org.postgresql.Driver"
               url="jdbc:postgresql://localhost:5432/paperwise_db"
               username="postgres"

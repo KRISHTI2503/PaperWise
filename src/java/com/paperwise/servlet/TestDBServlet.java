@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import jakarta.sql.DataSource;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
