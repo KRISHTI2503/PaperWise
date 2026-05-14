@@ -19,7 +19,7 @@ import java.io.OutputStream;
 public class DownloadPaperServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final String UPLOAD_DIR = "C:/paperwise_uploads";
+    private static final String UPLOAD_DIR = ViewFileServlet.UPLOAD_DIRECTORY;
 
     private PaperDAO paperDAO;
 

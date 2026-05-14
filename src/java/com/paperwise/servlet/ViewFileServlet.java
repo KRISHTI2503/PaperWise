@@ -15,11 +15,18 @@ import java.io.OutputStream;
 public class ViewFileServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final String UPLOAD_DIRECTORY = "C:/paperwise_uploads";
+    static final String UPLOAD_DIRECTORY = "C:/paperwise_uploads";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        // Require login
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("loggedInUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
 
         String fileName = request.getParameter("fileName");
         if (fileName == null || fileName.trim().isEmpty()) {
