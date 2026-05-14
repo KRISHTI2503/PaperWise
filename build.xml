@@ -10,6 +10,29 @@
 <project name="PaperWise_AJT" default="default" basedir=".">
     <description>Builds, tests, and runs the project PaperWise_AJT.</description>
     <import file="nbproject/build-impl.xml"/>
+
+    <target name="-pre-clean">
+        <exec executable="cmd" failonerror="false" osfamily="windows">
+            <arg value="/c"/>
+            <arg value="taskkill /F /IM java.exe /T 2>nul &amp; taskkill /F /IM javaw.exe /T 2>nul &amp; exit 0"/>
+        </exec>
+        <exec executable="cmd" failonerror="false" osfamily="windows">
+            <arg value="/c"/>
+            <arg value="attrib -R -S -H &quot;${basedir}\build&quot; /S /D 2>nul &amp; exit 0"/>
+        </exec>
+        <exec executable="cmd" failonerror="false" osfamily="windows">
+            <arg value="/c"/>
+            <arg value="attrib -R -S -H &quot;${basedir}\dist&quot; /S /D 2>nul &amp; exit 0"/>
+        </exec>
+        <exec executable="cmd" failonerror="false" osfamily="windows">
+            <arg value="/c"/>
+            <arg value="rd /s /q &quot;${basedir}\build&quot; 2>nul &amp; exit 0"/>
+        </exec>
+        <exec executable="cmd" failonerror="false" osfamily="windows">
+            <arg value="/c"/>
+            <arg value="rd /s /q &quot;${basedir}\dist&quot; 2>nul &amp; exit 0"/>
+        </exec>
+    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 
