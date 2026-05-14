@@ -496,11 +496,11 @@
                     <!-- Actions -->
                     <td>
                         <div class="action-btns">
-                            <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>"
+                            <a href="${pageContext.request.contextPath}/viewFile?paperId=<%= paper.getPaperId() %>"
                                target="_blank" class="act-btn act-view">
                                 <i class="fa-regular fa-eye"></i> View
                             </a>
-                            <a href="${pageContext.request.contextPath}/viewFile?fileName=<%= paper.getFileUrl() %>&download=true"
+                            <a href="${pageContext.request.contextPath}/downloadPaper?paperId=<%= paper.getPaperId() %>"
                                class="act-btn act-download">
                                 <i class="fa-solid fa-download"></i> Download
                             </a>

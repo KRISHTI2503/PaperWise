@@ -39,7 +39,11 @@ public class ViewPaperServlet extends HttpServlet {
             return;
         }
 
-        String idParam = request.getParameter("id");
+        String idParam = request.getParameter("paperId");
+        if (idParam == null || idParam.trim().isEmpty()) {
+            // also accept legacy ?id= param
+            idParam = request.getParameter("id");
+        }
         if (idParam == null || idParam.trim().isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing paper ID.");
             return;
