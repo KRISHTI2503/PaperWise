@@ -29,7 +29,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request Paper - PaperWise</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f4f9;display:flex;min-height:100vh}
@@ -210,18 +209,18 @@
 
     <div class="sb-sec">Main</div>
     <a href="${pageContext.request.contextPath}/studentDashboard" class="sb-item">
-        <i class="ti ti-layout-dashboard"></i> Dashboard
+        <i class="fa-solid fa-house"></i> Dashboard
     </a>
     <a href="${pageContext.request.contextPath}/studentDashboard" class="sb-item">
-        <i class="ti ti-files"></i> All Papers
+        <i class="fa-regular fa-file-lines"></i> All Papers
     </a>
     <a href="${pageContext.request.contextPath}/studentDashboard#marked" class="sb-item">
-        <i class="ti ti-heart"></i> My Marked
+        <i class="fa-regular fa-bookmark"></i> My Marked
     </a>
 
     <div class="sb-sec">Requests</div>
     <a href="${pageContext.request.contextPath}/requestPaper" class="sb-item active">
-        <i class="ti ti-inbox"></i> My Requests
+        <i class="fa-regular fa-file"></i> My Requests
     </a>
 
     <div class="sb-bottom">
