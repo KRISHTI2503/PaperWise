@@ -120,19 +120,6 @@
 
         .hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
 
-        .diff-row { display: flex; gap: 8px; }
-        .db {
-            flex: 1; border: 1.5px solid #e5e7eb; border-radius: 9px;
-            padding: 8px 6px; font-size: 13px; font-weight: 500;
-            font-family: inherit; cursor: pointer; background: #f9fafb;
-            color: #6b7280; display: flex; align-items: center;
-            justify-content: center; gap: 6px; transition: all .16s;
-        }
-        .db i { font-size: 16px; }
-        .db.easy.on { background: #dcfce7; border-color: #16a34a; color: #15803d; }
-        .db.med.on  { background: #fef9c3; border-color: #ca8a04; color: #a16207; }
-        .db.hard.on { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
-
         .tags-box {
             display: flex; flex-wrap: wrap; gap: 5px;
             border: 1.5px solid #e5e7eb; border-radius: 9px;
@@ -347,23 +334,6 @@
                     </div>
                     <input type="hidden" id="chapterHidden" name="chapter" value="">
                     <span class="hint">Press Enter or comma to add a chapter tag</span>
-                </div>
-
-                <!-- Difficulty toggle -->
-                <div class="fg full">
-                    <label>Difficulty <span class="opt-badge">optional</span></label>
-                    <div class="diff-row" id="diffRow">
-                        <button type="button" class="db easy" data-d="easy">
-                            <i class="ti ti-mood-smile"></i> Easy
-                        </button>
-                        <button type="button" class="db med" data-d="med">
-                            <i class="ti ti-mood-neutral"></i> Medium
-                        </button>
-                        <button type="button" class="db hard" data-d="hard">
-                            <i class="ti ti-mood-sad"></i> Hard
-                        </button>
-                    </div>
-                    <input type="hidden" id="diffVal" name="difficulty" value="">
                 </div>
 
             </div><!-- end form-grid -->
