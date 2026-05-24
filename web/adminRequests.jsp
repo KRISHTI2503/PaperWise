@@ -37,7 +37,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Requests - PaperWise</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -191,18 +190,18 @@
             display: flex; align-items: center; gap: 12px;
         }
         .stat-icon {
-            width: 36px; height: 36px;
-            border-radius: 9px;
+            width: 42px; height: 42px;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .stat-icon i { font-size: 15px; margin: 0; }
+        .stat-icon i { font-size: 16px; margin: 0; }
         .stat-icon.blue   { background: #dbeafe; color: #2563eb; }
-        .stat-icon.amber  { background: #fef3c7; color: #d97706; }
+        .stat-icon.amber  { background: #fef9c3; color: #ca8a04; }
         .stat-icon.green  { background: #dcfce7; color: #16a34a; }
         .stat-icon.red    { background: #fee2e2; color: #dc2626; }
-        .stat-num   { font-size: 22px; font-weight: 700; color: #0d1b2a; line-height: 1.1; }
-        .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .stat-num   { font-size: 24px; font-weight: 700; color: #0f2744; line-height: 1.1; }
+        .stat-label { font-size: 12px; color: #8a97a8; margin-top: 2px; }
 
         /* ═══════════ TABLE CARD ═══════════ */
         .table-card {
@@ -363,11 +362,7 @@
     <!-- Logo -->
     <div class="sidebar-logo">
         <div class="logo-sq">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
+            <i class="fa-solid fa-book-open"></i>
         </div>
         <div class="logo-text">
             <div class="app-name">PaperWise</div>
@@ -379,13 +374,13 @@
     <div class="nav-section">
         <div class="nav-label">Main</div>
         <a href="${pageContext.request.contextPath}/adminDashboard" class="nav-item">
-            <i class="ti ti-dashboard"></i> Dashboard
+            <i class="fa-solid fa-table-cells-large"></i> Dashboard
         </a>
-        <a href="${pageContext.request.contextPath}/adminDashboard" class="nav-item">
-            <i class="ti ti-files"></i> All Papers
+        <a href="${pageContext.request.contextPath}/allPapers" class="nav-item">
+            <i class="fa-regular fa-file-lines"></i> All Papers
         </a>
         <a href="${pageContext.request.contextPath}/uploadPaper" class="nav-item">
-            <i class="ti ti-upload"></i> Upload Paper
+            <i class="fa-solid fa-upload"></i> Upload Paper
         </a>
     </div>
 
@@ -393,13 +388,13 @@
     <div class="nav-section">
         <div class="nav-label">Manage</div>
         <a href="${pageContext.request.contextPath}/adminRequests" class="nav-item active">
-            <i class="ti ti-inbox"></i> Requests
+            <i class="fa-solid fa-clipboard-list"></i> Requests
+        </a>
+        <a href="${pageContext.request.contextPath}/students" class="nav-item">
+            <i class="fa-solid fa-users"></i> Students
         </a>
         <a href="#" class="nav-item">
-            <i class="ti ti-users"></i> Students
-        </a>
-        <a href="#" class="nav-item">
-            <i class="ti ti-chart-bar"></i> Analytics
+            <i class="fa-solid fa-chart-bar"></i> Analytics
         </a>
     </div>
 
@@ -414,9 +409,10 @@
         </div>
         <form action="${pageContext.request.contextPath}/logout" method="post">
             <button type="submit" class="logout-btn">
-                <i class="ti ti-logout"></i> Logout
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
             </button>
-        </form>    </div>
+        </form>
+    </div>
 
 </aside>
 
@@ -433,11 +429,11 @@
         </div>
         <div class="topbar-right">
             <div class="date-chip">
-                <i class="ti ti-calendar"></i>
+                <i class="fa-regular fa-calendar"></i>
                 <%= currentMonthYear %>
             </div>
             <button class="bell-btn" aria-label="Notifications">
-                <i class="ti ti-bell"></i>
+                <i class="fa-regular fa-bell"></i>
                 <% if (pendingCount > 0) { %><span class="bell-dot"></span><% } %>
             </button>
         </div>
@@ -449,13 +445,13 @@
         <!-- Alerts -->
         <% if (successMessage != null) { %>
         <div class="alert alert-success">
-            <i class="ti ti-circle-check"></i>
+            <i class="fa-solid fa-circle-check"></i>
             <%= successMessage %>
         </div>
         <% } %>
         <% if (errorMessage != null) { %>
         <div class="alert alert-error">
-            <i class="ti ti-alert-circle"></i>
+            <i class="fa-solid fa-circle-exclamation"></i>
             <%= errorMessage %>
         </div>
         <% } %>
@@ -463,28 +459,28 @@
         <!-- Stat cards -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon blue"><i class="ti ti-inbox"></i></div>
+                <div class="stat-icon blue"><i class="fas fa-inbox"></i></div>
                 <div>
                     <div class="stat-num"><%= totalCount %></div>
                     <div class="stat-label">Total Requests</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon amber"><i class="ti ti-clock"></i></div>
+                <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
                 <div>
                     <div class="stat-num"><%= pendingCount %></div>
                     <div class="stat-label">Pending</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon green"><i class="ti ti-circle-check"></i></div>
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
                 <div>
                     <div class="stat-num"><%= completedCount %></div>
                     <div class="stat-label">Completed</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon red"><i class="ti ti-circle-x"></i></div>
+                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
                 <div>
                     <div class="stat-num"><%= rejectedCount %></div>
                     <div class="stat-label">Rejected</div>
@@ -496,13 +492,13 @@
         <div class="table-card">
             <div class="table-header">
                 <div class="table-header-left">
-                    <i class="ti ti-clipboard-list" style="font-size:18px;color:#3b82f6;"></i>
+                    <i class="fa-solid fa-clipboard-list" style="font-size:18px;color:#3b82f6;"></i>
                     <span class="table-title">All Requests</span>
                     <span class="count-pill" id="req-count"><%= totalCount %></span>
                 </div>
                 <div class="table-controls">
                     <div class="search-wrap">
-                        <i class="ti ti-search"></i>
+                        <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchIn" placeholder="Search subject, student…">
                     </div>
                     <select class="filter-select" id="filterSel">
@@ -537,16 +533,16 @@
                     switch (st) {
                         case "approved":
                             badgeBg = "#dcfce7"; badgeColor = "#065f46";
-                            statusIcon = "ti ti-circle-check"; break;
+                            statusIcon = "fas fa-check-circle"; break;
                         case "rejected":
                             badgeBg = "#fee2e2"; badgeColor = "#7f1d1d";
-                            statusIcon = "ti ti-circle-x"; break;
+                            statusIcon = "fas fa-times-circle"; break;
                         case "completed":
                             badgeBg = "#e0e7ff"; badgeColor = "#3730a3";
-                            statusIcon = "ti ti-flag"; break;
+                            statusIcon = "fas fa-flag"; break;
                         default:
-                            badgeBg = "#fef3c7"; badgeColor = "#92400e";
-                            statusIcon = "ti ti-clock"; break;
+                            badgeBg = "#fef9c3"; badgeColor = "#92400e";
+                            statusIcon = "fas fa-clock"; break;
                     }
                     String statusLabel = st.substring(0,1).toUpperCase() + st.substring(1);
 
@@ -611,8 +607,8 @@
                                     <option value="completed" <%= "completed".equals(st) ? "selected" : "" %>>Completed</option>
                                 </select>
                                 <button type="submit"
-                                        style="background:#0f2744;color:white;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
-                                    <i class="ti ti-refresh"></i> Update
+                                        style="background:#0f2744;color:white;border:none;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
+                                    <i class="fas fa-sync-alt"></i> Update
                                 </button>
                             </form>
                         </div>
@@ -624,7 +620,7 @@
             </table>
             <% } else { %>
             <div style="text-align:center;padding:3rem;color:#9ca3af">
-                <i class="ti ti-inbox" style="font-size:40px;color:#d1d5db;display:block;margin-bottom:12px"></i>
+                <i class="fas fa-inbox" style="font-size:40px;color:#d1d5db;display:block;margin-bottom:12px"></i>
                 No requests found
             </div>
             <% } %>
