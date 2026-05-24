@@ -78,8 +78,13 @@ public class DownloadPaperServlet extends HttpServlet {
 
         File file = new File(UPLOAD_DIR, fileName);
         if (!file.exists() || !file.isFile()) {
+            System.err.println("[DownloadPaperServlet] FILE NOT FOUND");
+            System.err.println("[DownloadPaperServlet]   Expected path : " + file.getAbsolutePath());
+            System.err.println("[DownloadPaperServlet]   fileName from DB: " + fileName);
+            System.err.println("[DownloadPaperServlet]   Upload dir exists: " + new File(UPLOAD_DIR).exists());
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                    "File not found on disk: " + file.getAbsolutePath());
+                    "File not found on disk: " + file.getAbsolutePath()
+                    + " — the file may have been deleted or never uploaded successfully.");
             return;
         }
 

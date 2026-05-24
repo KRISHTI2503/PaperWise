@@ -75,8 +75,13 @@ public class ViewFileServlet extends HttpServlet {
 
         File file = new File(UPLOAD_DIRECTORY, fileName);
         if (!file.exists() || !file.isFile()) {
+            System.err.println("[ViewFileServlet] FILE NOT FOUND");
+            System.err.println("[ViewFileServlet]   Expected path : " + file.getAbsolutePath());
+            System.err.println("[ViewFileServlet]   fileName from DB: " + fileName);
+            System.err.println("[ViewFileServlet]   Upload dir exists: " + new File(UPLOAD_DIRECTORY).exists());
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                    "File not found on disk: " + file.getAbsolutePath());
+                    "File not found on disk: " + file.getAbsolutePath()
+                    + " — the file may have been deleted or never uploaded successfully.");
             return;
         }
 
