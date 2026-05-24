@@ -63,6 +63,7 @@
             justify-content: center; flex-shrink: 0;
         }
         .logo-sq i { font-size: 15px; color: #fff; margin: 0; }
+        .logo-text { display: flex; flex-direction: column; }
         .logo-text .app-name { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
         .logo-text .app-sub  { font-size: 10px; color: rgba(255,255,255,0.4); }
 
