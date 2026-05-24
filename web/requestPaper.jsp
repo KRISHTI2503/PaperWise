@@ -250,11 +250,11 @@
         </div>
         <div class="tb-right">
             <div class="date-chip">
-                <i class="ti ti-calendar"></i>
+                <i class="fa-regular fa-calendar"></i>
                 <%= new java.text.SimpleDateFormat("MMM yyyy").format(new java.util.Date()) %>
             </div>
             <button class="bell-btn" title="Notifications">
-                <i class="ti ti-bell"></i>
+                <i class="fa-regular fa-bell"></i>
             </button>
         </div>
     </div>
@@ -265,21 +265,21 @@
         <!-- STAT CARDS -->
         <div class="stats-row">
             <div class="sc">
-                <div class="si si-blue"><i class="ti ti-clipboard-list"></i></div>
+                <div class="si si-blue"><i class="fa-solid fa-clipboard-list"></i></div>
                 <div>
                     <div class="sv">${totalRequests}</div>
                     <div class="sl">Total Requests</div>
                 </div>
             </div>
             <div class="sc">
-                <div class="si si-amber"><i class="ti ti-clock"></i></div>
+                <div class="si si-amber"><i class="fa-regular fa-clock"></i></div>
                 <div>
                     <div class="sv">${pendingCount}</div>
                     <div class="sl">Pending</div>
                 </div>
             </div>
             <div class="sc">
-                <div class="si si-green"><i class="ti ti-circle-check"></i></div>
+                <div class="si si-green"><i class="fa-solid fa-circle-check"></i></div>
                 <div>
                     <div class="sv">${completedCount}</div>
                     <div class="sl">Completed</div>
@@ -293,13 +293,13 @@
             <div class="pw-card">
                 <div class="pw-card-head">
                     <div class="pw-card-title">
-                        <i class="ti ti-clipboard-plus"></i> New Request
+                        <i class="fa-solid fa-file-circle-plus"></i> New Request
                     </div>
                 </div>
                 <div class="pw-card-body">
 
                     <div class="pw-toast" id="pwToast">
-                        <i class="ti ti-circle-check"></i> Request submitted successfully!
+                        <i class="fa-solid fa-circle-check"></i> Request submitted successfully!
                     </div>
 
                     <% if (errorMessage != null) { %>
@@ -310,7 +310,7 @@
                         <div class="fg">
                             <label>Subject Name <span class="req">*</span></label>
                             <div class="iw">
-                                <i class="ti ti-book fi"></i>
+                                <i class="fa-solid fa-book fi"></i>
                                 <input type="text" name="subject_name"
                                        placeholder="e.g., Data Structures and Algorithms"
                                        value="<%= subjectName != null ? subjectName : "" %>"
@@ -321,7 +321,7 @@
                         <div class="fg">
                             <label>Subject Code <span class="req">*</span></label>
                             <div class="iw">
-                                <i class="ti ti-hash fi"></i>
+                                <i class="fa-solid fa-hashtag fi"></i>
                                 <input type="text" name="subject_code"
                                        placeholder="e.g., CS201, MATH201"
                                        value="<%= subjectCode != null ? subjectCode : "" %>"
@@ -332,7 +332,7 @@
                         <div class="fg">
                             <label>Year <span class="req">*</span></label>
                             <div class="iw">
-                                <i class="ti ti-calendar fi"></i>
+                                <i class="fa-regular fa-calendar fi"></i>
                                 <select name="year" style="padding-left:36px">
                                     <% for (int y = currentYear; y >= minYear; y--) {
                                            String sel = (yearStr != null && yearStr.equals(String.valueOf(y))) ? "selected" : ""; %>
@@ -346,7 +346,7 @@
                         <div class="fg">
                             <label>Description <span class="opt-lbl">optional</span></label>
                             <div class="iw" style="align-items:flex-start">
-                                <i class="ti ti-notes fi" style="position:absolute;left:11px;top:10px"></i>
+                                <i class="fa-regular fa-note-sticky fi" style="position:absolute;left:11px;top:10px"></i>
                                 <textarea name="description"
                                           placeholder="Any additional details… e.g., by tomorrow, sessional 1 only"
                                           style="padding-left:36px"><%= description != null ? description : "" %></textarea>
@@ -356,20 +356,20 @@
                         <hr class="pw-div">
                         <div class="actions">
                             <a href="${pageContext.request.contextPath}/studentDashboard" class="btn-cancel">
-                                <i class="ti ti-x"></i> Cancel
+                                <i class="fa-solid fa-xmark"></i> Cancel
                             </a>
                             <button type="submit" class="btn-submit">
-                                <i class="ti ti-send"></i> Submit Request
+                                <i class="fa-solid fa-paper-plane"></i> Submit Request
                             </button>
                         </div>
                     </form>
 
                     <div class="tips-card">
-                        <div class="tips-title"><i class="ti ti-bulb"></i> Request Tips</div>
-                        <div class="tip-item"><i class="ti ti-point"></i> Use the exact subject code from your syllabus.</div>
-                        <div class="tip-item"><i class="ti ti-point"></i> Mention exam type (sessional, final, etc.).</div>
-                        <div class="tip-item"><i class="ti ti-point"></i> Admins usually respond within 24 hours.</div>
-                        <div class="tip-item"><i class="ti ti-point"></i> Avoid duplicate requests for the same subject.</div>
+                        <div class="tips-title"><i class="fa-regular fa-lightbulb"></i> Request Tips</div>
+                        <div class="tip-item"><i class="fa-solid fa-circle-dot"></i> Use the exact subject code from your syllabus.</div>
+                        <div class="tip-item"><i class="fa-solid fa-circle-dot"></i> Mention exam type (sessional, final, etc.).</div>
+                        <div class="tip-item"><i class="fa-solid fa-circle-dot"></i> Admins usually respond within 24 hours.</div>
+                        <div class="tip-item"><i class="fa-solid fa-circle-dot"></i> Avoid duplicate requests for the same subject.</div>
                     </div>
 
                 </div>
