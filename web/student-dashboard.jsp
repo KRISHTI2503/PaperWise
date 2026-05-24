@@ -420,7 +420,7 @@
             <span class="pill-date">
                 <i class="fa-regular fa-calendar"></i> <%= currentMonthYear %>
             </span>
-            <button class="btn-request-paper" id="openRequestModal" title="Request a paper">
+            <button class="btn-request-paper" id="openRequestModal" title="Request a paper" style="display:none">
                 <i class="fa-solid fa-plus"></i> Request Paper
             </button>
             <button class="bell-btn" title="Notifications">
@@ -485,9 +485,6 @@
                     <span class="section-title">All Papers</span>
                     <span class="count-pill indigo"><%= papers != null ? papers.size() : 0 %></span>
                 </div>
-                <a href="${pageContext.request.contextPath}/requestPaper" class="act-btn act-view" style="font-size:12px; padding:6px 12px;">
-                    <i class="fa-regular fa-file"></i> Request Paper
-                </a>
             </div>
 
             <!-- Filter bar -->
