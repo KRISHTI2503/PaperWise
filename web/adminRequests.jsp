@@ -69,14 +69,15 @@
         }
         .logo-sq {
             width: 34px; height: 34px;
-            background: rgba(255,255,255,0.12);
-            border-radius: 8px;
+            background: #1a3a5c;
+            border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .logo-sq svg { width: 18px; height: 18px; }
-        .logo-text .app-name { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
-        .logo-text .app-sub  { font-size: 11px; color: rgba(255,255,255,0.45); }
+        .logo-sq i { font-size: 15px; color: #fff; margin: 0; }
+        .logo-text { display: flex; flex-direction: column; }
+        .logo-text .app-name { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .logo-text .app-sub  { font-size: 10px; color: rgba(255,255,255,0.4); }
 
         .nav-section { padding: 10px 0 4px; }
         .nav-label {
