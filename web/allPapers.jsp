@@ -381,7 +381,6 @@
             <div class="section-header">
                 <div class="section-header-left">
                     <span class="section-title">Uploaded Papers</span>
-                    <span class="count-pill indigo"><%= papers != null ? papers.size() : 0 %></span>
                 </div>
                 <div class="filter-controls">
                     <!-- Search -->

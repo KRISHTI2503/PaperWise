@@ -495,7 +495,6 @@
                 <div class="table-header-left">
                     <i class="fa-solid fa-clipboard-list" style="font-size:18px;color:#3b82f6;"></i>
                     <span class="table-title">All Requests</span>
-                    <span class="count-pill" id="req-count"><%= totalCount %></span>
                 </div>
                 <div class="table-controls">
                     <div class="search-wrap">

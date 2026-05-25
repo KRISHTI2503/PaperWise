@@ -571,7 +571,6 @@
             <div class="section-header">
                 <div class="section-header-left">
                     <span class="section-title">Uploaded Papers</span>
-                    <span class="count-pill indigo"><%= papers != null ? papers.size() : 0 %></span>
                 </div>
                 <a href="${pageContext.request.contextPath}/uploadPaper" class="btn-upload">
                     <i class="fa-solid fa-plus"></i> Upload Paper
