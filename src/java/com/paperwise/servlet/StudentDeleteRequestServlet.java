@@ -11,8 +11,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 
+/**
+ * Deletes a student's own paper request.
+ * Accepts both fetch() and plain form POST.
+ * Parameter: requestId
+ */
 @WebServlet("/student/deleteRequest")
 public class StudentDeleteRequestServlet extends HttpServlet {
 
@@ -28,42 +32,33 @@ public class StudentDeleteRequestServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
         HttpSession session = request.getSession(false);
         if (session == null) {
-            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
         User user = (User) session.getAttribute("loggedInUser");
         if (user == null) {
-            out.print("{\"success\":false,\"error\":\"Not logged in\"}");
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
         String requestIdParam = request.getParameter("requestId");
         if (requestIdParam == null || requestIdParam.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"Missing requestId\"}");
+            response.sendRedirect(request.getContextPath() + "/studentDashboard");
             return;
         }
 
         try {
             int requestId = Integer.parseInt(requestIdParam.trim());
-            boolean deleted = requestDAO.deleteRequest(requestId, user.getUserId());
-
-            if (deleted) {
-                out.print("{\"success\":true}");
-            } else {
-                out.print("{\"success\":false,\"error\":\"Request not found or not yours\"}");
-            }
-
+            requestDAO.deleteRequest(requestId, user.getUserId());
         } catch (NumberFormatException e) {
-            out.print("{\"success\":false,\"error\":\"Invalid requestId\"}");
+            // ignore
         } catch (Exception e) {
             e.printStackTrace();
-            out.print("{\"success\":false,\"error\":\"Server error\"}");
         }
+
+        response.sendRedirect(request.getContextPath() + "/studentDashboard");
     }
 }

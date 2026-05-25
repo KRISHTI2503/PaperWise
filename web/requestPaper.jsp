@@ -437,7 +437,7 @@
                                   onsubmit="return confirm('Delete this request?')">
                                 <input type="hidden" name="requestId" value="<%= req.getRequestId() %>">
                                 <button type="submit" class="btn-del">
-                                    <i class="ti ti-trash"></i>
+                                    <i class="fa-solid fa-trash"></i>
                                 </button>
                             </form>
                             <% } else { %>

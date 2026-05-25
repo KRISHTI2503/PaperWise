@@ -576,37 +576,49 @@
                                class="act-btn act-download">
                                 <i class="fa-solid fa-download"></i> Download
                             </a>
-                            <%-- Useful mark toggle — fetch-powered --%>
-                            <button
-                                class="act-btn <%= paper.isAlreadyMarked() ? "act-marked" : "act-vote" %> btn-useful"
-                                data-paper-id="<%= paper.getPaperId() %>"
-                                data-marked="<%= paper.isAlreadyMarked() %>"
-                                data-ctx="${pageContext.request.contextPath}">
-                                <i class="fa-solid fa-thumbs-up"></i>
-                                <span class="useful-label"><%= paper.isAlreadyMarked() ? "Marked" : "Useful" %></span>
-                                (<span class="useful-count"><%= paper.getUsefulCount() %></span>)
-                            </button>
-                            <%-- Difficulty rating — fetch-powered --%>
-                            <div class="diff-btns" data-paper-id="<%= paper.getPaperId() %>">
-                                <button class="act-btn act-easy btn-diff" data-level="easy"
-                                        data-paper-id="<%= paper.getPaperId() %>"
-                                        data-ctx="${pageContext.request.contextPath}">
+                            <%-- Useful mark toggle — form POST --%>
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/student/markUseful"
+                                  style="display:inline">
+                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
+                                <button type="submit"
+                                        class="act-btn <%= paper.isAlreadyMarked() ? "act-marked" : "act-vote" %>">
+                                    <i class="fa-solid fa-thumbs-up"></i>
+                                    <span><%= paper.isAlreadyMarked() ? "Marked" : "Useful" %></span>
+                                    (<%= paper.getUsefulCount() %>)
+                                </button>
+                            </form>
+                            <%-- Difficulty rating — form POST --%>
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/student/rateDifficulty"
+                                  style="display:inline">
+                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
+                                <input type="hidden" name="difficulty" value="easy">
+                                <button type="submit" class="act-btn act-easy">
                                     <i class="fa-solid fa-check"></i> Easy
-                                    (<span class="diff-count-easy"><%= paper.getEasyCount() %></span>)
+                                    (<%= paper.getEasyCount() %>)
                                 </button>
-                                <button class="act-btn act-medium btn-diff" data-level="medium"
-                                        data-paper-id="<%= paper.getPaperId() %>"
-                                        data-ctx="${pageContext.request.contextPath}">
+                            </form>
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/student/rateDifficulty"
+                                  style="display:inline">
+                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
+                                <input type="hidden" name="difficulty" value="medium">
+                                <button type="submit" class="act-btn act-medium">
                                     <i class="fa-solid fa-minus"></i> Med
-                                    (<span class="diff-count-medium"><%= paper.getMediumCount() %></span>)
+                                    (<%= paper.getMediumCount() %>)
                                 </button>
-                                <button class="act-btn act-hard btn-diff" data-level="hard"
-                                        data-paper-id="<%= paper.getPaperId() %>"
-                                        data-ctx="${pageContext.request.contextPath}">
+                            </form>
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/student/rateDifficulty"
+                                  style="display:inline">
+                                <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
+                                <input type="hidden" name="difficulty" value="hard">
+                                <button type="submit" class="act-btn act-hard">
                                     <i class="fa-solid fa-exclamation"></i> Hard
-                                    (<span class="diff-count-hard"><%= paper.getHardCount() %></span>)
+                                    (<%= paper.getHardCount() %>)
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -672,11 +684,15 @@
                         <%= req.getCreatedAt() != null ? req.getCreatedAt().format(dtf) : "-" %>
                     </td>
                     <td>
-                        <button class="act-btn act-delete-sm btn-delete-req"
-                                data-request-id="<%= req.getRequestId() %>"
-                                data-ctx="${pageContext.request.contextPath}">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/student/deleteRequest"
+                              style="display:inline"
+                              onsubmit="return confirm('Delete this request?')">
+                            <input type="hidden" name="requestId" value="<%= req.getRequestId() %>">
+                            <button type="submit" class="act-btn act-delete-sm">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <% } %>
