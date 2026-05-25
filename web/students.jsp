@@ -356,7 +356,6 @@
                 <div class="section-header-left">
                     <i class="fa-solid fa-users" style="font-size:14px;color:#4338ca;margin:0;"></i>
                     <span class="section-title">All Students</span>
-                    <span class="count-pill indigo"><%= totalStudents %></span>
                 </div>
                 <div class="search-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>

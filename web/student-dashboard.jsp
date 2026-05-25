@@ -574,7 +574,6 @@
                     <td><span class="useful-num"><%= paper.getUsefulCount() %></span></td>
                     <td>
                         <span class="diff-badge <%= diffCls %>">
-                            <% if (!diffIcon.isEmpty()) { %><i class="<%= diffIcon %>"></i><% } %>
                             <%= diffLabel %>
                         </span>
                         <br><small style="font-size:10px;color:#9ca3af;">
