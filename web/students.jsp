@@ -137,7 +137,7 @@
 
         /* ── STAT CARDS ──────────────────────────── */
         .stats-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
+            display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 12px; margin-bottom: 20px;
         }
         .stat-card {
@@ -335,13 +335,6 @@
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon green"><i class="fa-solid fa-user-check"></i></div>
-                <div class="stat-body">
-                    <div class="stat-num"><%= activeThisMonth %></div>
-                    <div class="stat-label">Active This Month</div>
-                </div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-icon orange"><i class="fa-solid fa-thumbs-up"></i></div>
                 <div class="stat-body">
                     <div class="stat-num"><%= totalUsefulMarks %></div>
@@ -381,7 +374,6 @@
                         <th>#</th>
                         <th>Student</th>
                         <th>Joined</th>
-                        <th>Status</th>
                         <th>Useful Marks Given</th>
                         <th>Requests Made</th>
                     </tr>
@@ -442,7 +434,6 @@
                         </div>
                     </td>
                     <td class="td-date"><%= joinedStr %></td>
-                    <td><span class="status-badge <%= statusClass %>"><%= statusLabel %></span></td>
                     <td>
                         <% if (student.getUsefulMarksGiven() > 0) { %>
                             <div class="count-cell">

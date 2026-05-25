@@ -493,9 +493,10 @@
                        id="searchInput"
                        class="search-input"
                        placeholder="Search subject, code, year…"
+                       oninput="filterTable()"
                        value="<%= searchQuery != null ? searchQuery : "" %>">
                 <select id="yearFilter" class="year-select"
-                        onchange="window.location.href='${pageContext.request.contextPath}/studentDashboard?year='+this.value">
+                        onchange="filterTable()">
                     <option value="all" <%= selectedYear == null ? "selected" : "" %>>All Years</option>
                     <% if (availableYears != null) {
                            for (Integer yr : availableYears) { %>
@@ -519,7 +520,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="papersTableBody">
                 <%
                 for (Paper paper : papers) {
                     String diffLabel = paper.getDifficultyLabel();
@@ -763,6 +764,20 @@
 </div>
 
 <script>
+    // Client-side search + year filter
+    function filterTable() {
+        const searchVal = document.getElementById('searchInput').value.toLowerCase();
+        const yearVal   = document.getElementById('yearFilter').value;
+        const rows      = document.querySelectorAll('#papersTableBody tr');
+        rows.forEach(function(row) {
+            const text    = row.innerText.toLowerCase();
+            const rowYear = row.getAttribute('data-year') || '';
+            const matchSearch = searchVal === '' || text.includes(searchVal);
+            const matchYear   = yearVal === '' || yearVal === 'all' || yearVal === 'All Years' || rowYear === yearVal;
+            row.style.display = (matchSearch && matchYear) ? '' : 'none';
+        });
+    }
+
     // Auto-dismiss flash message
     const flash = document.getElementById('flashMsg');
     if (flash) {
