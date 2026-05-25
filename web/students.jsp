@@ -314,7 +314,7 @@
         </div>
         <div class="topbar-right">
             <span class="pill-date">
-                <i class="fa-regular fa-calendar"></i> <%= currentMonthYear %>
+                <i class="fa-regular fa-calendar"></i> <span id="topbarDate"></span>
             </span>
             <button class="bell-btn" title="Notifications">
                 <i class="fa-regular fa-bell"></i>
@@ -498,6 +498,15 @@
         var nr = document.getElementById('noResults');
         if (nr) nr.style.display = vis === 0 ? 'block' : 'none';
     }
+</script>
+<script>
+(function() {
+    var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var now=new Date();
+    var el=document.getElementById('topbarDate');
+    if(el) el.textContent=days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+})();
 </script>
 </body>
 </html>

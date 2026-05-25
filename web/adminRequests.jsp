@@ -431,7 +431,7 @@
         <div class="topbar-right">
             <div class="date-chip">
                 <i class="fa-regular fa-calendar"></i>
-                <%= currentMonthYear %>
+                <span id="topbarDate"></span>
             </div>
             <button class="bell-btn" aria-label="Notifications">
                 <i class="fa-regular fa-bell"></i>
@@ -669,6 +669,15 @@
         if (p.get('updated') === 'true') showToast('Status updated successfully!');
         if (p.get('deleted') === 'true') showToast('Request deleted successfully!');
     });
+</script>
+<script>
+(function() {
+    var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var now=new Date();
+    var el=document.getElementById('topbarDate');
+    if(el) el.textContent=days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+})();
 </script>
 
 </body>

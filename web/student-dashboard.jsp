@@ -418,7 +418,7 @@
         <span class="topbar-title">Student Dashboard</span>
         <div class="topbar-right">
             <span class="pill-date">
-                <i class="fa-regular fa-calendar"></i> <%= currentMonthYear %>
+                <i class="fa-regular fa-calendar"></i> <span id="topbarDate"></span>
             </span>
             <button class="btn-request-paper" id="openRequestModal" title="Request a paper" style="display:none">
                 <i class="fa-solid fa-plus"></i> Request Paper
@@ -545,8 +545,8 @@
                     String uploadedDate = paper.getCreatedAt() != null
                         ? paper.getCreatedAt().format(dtf) : "-";
                 %>
-                <tr data-subject-code="<%= paper.getSubjectCode().toLowerCase() %>"
-                    data-subject-name="<%= paper.getSubjectName().toLowerCase() %>"
+                <tr data-subject="<%= paper.getSubjectName().toLowerCase() %>"
+                    data-code="<%= paper.getSubjectCode().toLowerCase() %>"
                     data-year="<%= paper.getYear() %>">
                     <td class="td-subject">
                         <span class="ft-badge <%= ftClass %>"><%= ftLabel %></span><%= paper.getSubjectName() %>
@@ -588,7 +588,7 @@
                     </td>
                     <td class="date-cell"><%= uploadedDate %></td>
                     <td>
-                        <div class="action-btns">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-bottom:5px">
                             <a href="${pageContext.request.contextPath}/viewFile?paperId=<%= paper.getPaperId() %>"
                                target="_blank" class="act-btn act-view">
                                 <i class="fa-regular fa-eye"></i> View
@@ -597,7 +597,6 @@
                                class="act-btn act-download">
                                 <i class="fa-solid fa-download"></i> Download
                             </a>
-                            <%-- Useful mark toggle — form POST --%>
                             <form method="post"
                                   action="${pageContext.request.contextPath}/student/markUseful"
                                   style="display:inline">
@@ -609,15 +608,15 @@
                                     (<%= paper.getUsefulCount() %>)
                                 </button>
                             </form>
-                            <%-- Difficulty rating — form POST --%>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
                             <form method="post"
                                   action="${pageContext.request.contextPath}/student/rateDifficulty"
                                   style="display:inline">
                                 <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
                                 <input type="hidden" name="difficulty" value="easy">
                                 <button type="submit" class="act-btn act-easy">
-                                    <i class="fa-solid fa-check"></i> Easy
-                                    (<%= paper.getEasyCount() %>)
+                                    Easy (<%= paper.getEasyCount() %>)
                                 </button>
                             </form>
                             <form method="post"
@@ -626,8 +625,7 @@
                                 <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
                                 <input type="hidden" name="difficulty" value="medium">
                                 <button type="submit" class="act-btn act-medium">
-                                    <i class="fa-solid fa-minus"></i> Med
-                                    (<%= paper.getMediumCount() %>)
+                                    Med (<%= paper.getMediumCount() %>)
                                 </button>
                             </form>
                             <form method="post"
@@ -636,8 +634,7 @@
                                 <input type="hidden" name="paperId" value="<%= paper.getPaperId() %>">
                                 <input type="hidden" name="difficulty" value="hard">
                                 <button type="submit" class="act-btn act-hard">
-                                    <i class="fa-solid fa-exclamation"></i> Hard
-                                    (<%= paper.getHardCount() %>)
+                                    Hard (<%= paper.getHardCount() %>)
                                 </button>
                             </form>
                         </div>
@@ -766,14 +763,20 @@
 <script>
     // Client-side search + year filter
     function filterTable() {
-        const searchVal = document.getElementById('searchInput').value.toLowerCase();
-        const yearVal   = document.getElementById('yearFilter').value;
+        const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+        const yearVal   = document.getElementById('yearFilter').value.trim();
         const rows      = document.querySelectorAll('#papersTableBody tr');
         rows.forEach(function(row) {
-            const text    = row.innerText.toLowerCase();
-            const rowYear = row.getAttribute('data-year') || '';
-            const matchSearch = searchVal === '' || text.includes(searchVal);
-            const matchYear   = yearVal === '' || yearVal === 'all' || yearVal === 'All Years' || rowYear === yearVal;
+            const subject  = (row.getAttribute('data-subject') || '').toLowerCase();
+            const code     = (row.getAttribute('data-code')    || '').toLowerCase();
+            const year     = (row.getAttribute('data-year')    || '').toString().trim();
+            const fullText = row.innerText.toLowerCase();
+            const matchSearch = searchVal === '' ||
+                subject.includes(searchVal) ||
+                code.includes(searchVal) ||
+                year.includes(searchVal) ||
+                fullText.includes(searchVal);
+            const matchYear = yearVal === '' || yearVal === 'all' || year === yearVal;
             row.style.display = (matchSearch && matchYear) ? '' : 'none';
         });
     }
@@ -1042,6 +1045,16 @@
     }
 
     document.querySelectorAll('.btn-delete-req').forEach(attachDeleteListener);
+</script>
+<script>
+(function() {
+    var days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var now    = new Date();
+    var formatted = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+    var el = document.getElementById('topbarDate');
+    if (el) el.textContent = formatted;
+})();
 </script>
 </body>
 </html>
