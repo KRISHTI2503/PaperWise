@@ -588,7 +588,7 @@
                     <%-- Status --%>
                     <td style="padding:0.7rem 1rem;vertical-align:middle">
                         <span style="display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:600;background:<%= badgeBg %>;color:<%= badgeColor %>">
-                            <i class="<%= statusIcon %>" style="font-size:12px"></i>
+                            <i class="<%= statusIcon %>" style="font-size:9px;vertical-align:middle"></i>
                             <%= statusLabel %>
                         </span>
                     </td>

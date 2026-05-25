@@ -405,6 +405,16 @@
                             }
                         %>
                     </select>
+                    <!-- Exam Type filter -->
+                    <select id="examTypeFilter" class="year-select" onchange="filterTable()">
+                        <option value="">All Types</option>
+                        <option value="Mid Term">Mid Term</option>
+                        <option value="End Term">End Term</option>
+                        <option value="Quiz">Quiz</option>
+                        <option value="Sessional 1">Sessional 1</option>
+                        <option value="Sessional 2">Sessional 2</option>
+                        <option value="Assignment">Assignment</option>
+                    </select>
                 </div>
             </div>
 
@@ -437,7 +447,8 @@
                 %>
                 <tr data-subject="<%= paper.getSubjectName().toLowerCase() %>"
                     data-code="<%= paper.getSubjectCode().toLowerCase() %>"
-                    data-year="<%= paper.getYear() %>">
+                    data-year="<%= paper.getYear() %>"
+                    data-examtype="<%= paper.getExamType() != null ? paper.getExamType().toLowerCase() : "" %>">
                     <td class="td-subject"><%= paper.getSubjectName() %></td>
                     <td><span class="code-pill"><%= paper.getSubjectCode() %></span></td>
                     <td><span class="year-pill"><%= paper.getYear() %></span></td>
@@ -549,20 +560,23 @@
 
 <script>
     function filterTable() {
-        var query   = document.getElementById('searchInput').value.toLowerCase().trim();
-        var yearVal = document.getElementById('yearFilter').value;
-        var rows    = document.querySelectorAll('#papersBody tr');
-        var visible = 0;
+        var query    = document.getElementById('searchInput').value.toLowerCase().trim();
+        var yearVal  = document.getElementById('yearFilter').value;
+        var examVal  = document.getElementById('examTypeFilter').value.toLowerCase();
+        var rows     = document.querySelectorAll('#papersBody tr');
+        var visible  = 0;
 
         rows.forEach(function (row) {
-            var subject = row.dataset.subject || '';
-            var code    = row.dataset.code    || '';
-            var year    = row.dataset.year    || '';
+            var subject  = row.dataset.subject  || '';
+            var code     = row.dataset.code     || '';
+            var year     = row.dataset.year     || '';
+            var examType = row.dataset.examtype || '';
 
-            var matchSearch = !query || subject.includes(query) || code.includes(query);
+            var matchSearch = !query   || subject.includes(query) || code.includes(query);
             var matchYear   = !yearVal || year === yearVal;
+            var matchExam   = !examVal || examType === examVal;
 
-            if (matchSearch && matchYear) {
+            if (matchSearch && matchYear && matchExam) {
                 row.style.display = '';
                 visible++;
             } else {
