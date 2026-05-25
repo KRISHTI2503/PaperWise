@@ -588,6 +588,7 @@
                         <th>Chapter</th>
                         <th>Exam Type</th>
                         <th>Uploaded By</th>
+                        <th>Uploaded On</th>
                         <th>Difficulty</th>
                         <th>Actions</th>
                     </tr>
@@ -614,6 +615,13 @@
                             <% } %>
                         </td>
                         <td><%= paper.getUploaderUsername() != null ? paper.getUploaderUsername() : "Unknown" %></td>
+                        <td style="color:#64748b;font-size:12px;white-space:nowrap">
+                            <% if (paper.getCreatedAt() != null) { %>
+                                <%= paper.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) %>
+                            <% } else { %>
+                                <span style="color:#94a3b8;font-style:italic">—</span>
+                            <% } %>
+                        </td>
                         <td><span class="diff-badge <%= diffCls %>"><%= diffLabel %></span></td>
                         <td>
                             <div class="action-btns">

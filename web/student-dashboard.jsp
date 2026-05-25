@@ -512,6 +512,7 @@
                         <th>Code</th>
                         <th>Year</th>
                         <th>Chapter</th>
+                        <th>Exam Type</th>
                         <th>Useful</th>
                         <th>Difficulty</th>
                         <th>Uploaded</th>
@@ -555,6 +556,20 @@
                     <td><span class="code-pill"><%= paper.getSubjectCode() %></span></td>
                     <td><span class="year-pill"><%= paper.getYear() %></span></td>
                     <td><%= paper.getChapter() != null ? paper.getChapter() : "-" %></td>
+                    <td>
+                        <% String examType = paper.getExamType();
+                           if (examType != null && !examType.isEmpty()) {
+                               String examBg = "#f1f5f9", examColor = "#475569";
+                               if ("Mid Term".equalsIgnoreCase(examType))  { examBg = "#f3e8ff"; examColor = "#7e22ce"; }
+                               else if ("End Term".equalsIgnoreCase(examType)) { examBg = "#dcfce7"; examColor = "#166534"; }
+                               else if ("Quiz".equalsIgnoreCase(examType))     { examBg = "#fefce8"; examColor = "#854d0e"; }
+                               else if (examType.toLowerCase().contains("sessional")) { examBg = "#eff6ff"; examColor = "#1d4ed8"; }
+                        %>
+                            <span style="background:<%= examBg %>;color:<%= examColor %>;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap"><%= examType %></span>
+                        <% } else { %>
+                            <span style="color:#94a3b8;font-size:11px;font-style:italic">—</span>
+                        <% } %>
+                    </td>
                     <td><span class="useful-num"><%= paper.getUsefulCount() %></span></td>
                     <td>
                         <span class="diff-badge <%= diffCls %>">
@@ -564,6 +579,11 @@
                         <br><small style="font-size:10px;color:#9ca3af;">
                             (<%= paper.getEasyCount() %> | <%= paper.getMediumCount() %> | <%= paper.getHardCount() %>)
                         </small>
+                        <% if (paper.getEasyCount() == 0 && paper.getMediumCount() == 0 && paper.getHardCount() == 0) { %>
+                        <div style="margin-top:4px">
+                            <span style="background:#fff7ed;color:#c2410c;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;display:inline-block;border:1px solid #fed7aa">&#11088; Be first to rate!</span>
+                        </div>
+                        <% } %>
                     </td>
                     <td class="date-cell"><%= uploadedDate %></td>
                     <td>
