@@ -12,11 +12,14 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/rateDifficulty")
 public class DifficultyVoteServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(DifficultyVoteServlet.class.getName());
 
     private static final Set<String> VALID_LEVELS = Set.of("easy", "medium", "hard");
 
@@ -27,8 +30,7 @@ public class DifficultyVoteServlet extends HttpServlet {
         try {
             difficultyVoteDAO = new DifficultyVoteDAO();
         } catch (Exception e) {
-            System.err.println("Failed to initialise DifficultyVoteDAO in DifficultyVoteServlet.");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to initialise DifficultyVoteDAO in DifficultyVoteServlet.");
             throw new ServletException("DifficultyVoteServlet initialisation failed.", e);
         }
     }
@@ -38,8 +40,11 @@ public class DifficultyVoteServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        String contextPath = request.getContextPath();
+        String dashboard = contextPath + "/studentDashboard";
+
         if (session == null) {
-            response.sendRedirect("login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
@@ -49,7 +54,7 @@ public class DifficultyVoteServlet extends HttpServlet {
         }
 
         if (user == null) {
-            response.sendRedirect("login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
@@ -58,37 +63,30 @@ public class DifficultyVoteServlet extends HttpServlet {
         String normalizedLevel = (level != null) ? level.trim().toLowerCase() : null;
 
         if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
-            session.setAttribute("errorMessage", "Invalid paper ID.");
-            response.sendRedirect("studentDashboard");
+            response.sendRedirect(dashboard + "?error=true");
             return;
         }
 
         if (normalizedLevel == null || normalizedLevel.isEmpty()) {
-            session.setAttribute("errorMessage", "Please select a difficulty level.");
-            response.sendRedirect("studentDashboard");
+            response.sendRedirect(dashboard + "?invalid=true");
             return;
         }
 
         if (!VALID_LEVELS.contains(normalizedLevel)) {
-            session.setAttribute("errorMessage",
-                    "Invalid difficulty level. Must be one of: " + String.join(", ", VALID_LEVELS));
-            response.sendRedirect("studentDashboard");
+            response.sendRedirect(dashboard + "?invalid=true");
             return;
         }
 
         try {
             int paperId = Integer.parseInt(paperIdParam);
             difficultyVoteDAO.addOrUpdateDifficultyVote(paperId, user.getUserId(), normalizedLevel);
-            session.setAttribute("successMessage", "Difficulty rating recorded: " + normalizedLevel);
+            response.sendRedirect(dashboard + "?voted=true");
+            return;
 
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Invalid paper ID format.");
-        } catch (IllegalArgumentException e) {
-            session.setAttribute("errorMessage", e.getMessage());
+            response.sendRedirect(dashboard + "?error=true");
         } catch (Exception e) {
-            session.setAttribute("errorMessage", "Failed to record difficulty rating. Please try again.");
+            response.sendRedirect(dashboard + "?error=true");
         }
-
-        response.sendRedirect("studentDashboard");
     }
 }

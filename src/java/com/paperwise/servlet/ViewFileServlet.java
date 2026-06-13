@@ -14,11 +14,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/viewFile")
 public class ViewFileServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(ViewFileServlet.class.getName());
     static final String UPLOAD_DIRECTORY = "C:/paperwise_uploads";
 
     private PaperDAO paperDAO;
@@ -75,10 +78,8 @@ public class ViewFileServlet extends HttpServlet {
 
         File file = new File(UPLOAD_DIRECTORY, fileName);
         if (!file.exists() || !file.isFile()) {
-            System.err.println("[ViewFileServlet] FILE NOT FOUND");
-            System.err.println("[ViewFileServlet]   Expected path : " + file.getAbsolutePath());
-            System.err.println("[ViewFileServlet]   fileName from DB: " + fileName);
-            System.err.println("[ViewFileServlet]   Upload dir exists: " + new File(UPLOAD_DIRECTORY).exists());
+            LOGGER.log(Level.WARNING, "[ViewFileServlet] FILE NOT FOUND - expected: {0}, fileName: {1}, dir exists: {2}",
+                    new Object[]{file.getAbsolutePath(), fileName, new File(UPLOAD_DIRECTORY).exists()});
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
                     "File not found on disk: " + file.getAbsolutePath()
                     + " — the file may have been deleted or never uploaded successfully.");

@@ -77,8 +77,7 @@ public class EditPaperServlet extends HttpServlet {
 
         String paperIdParam = request.getParameter("paperId");
         if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
-            session.setAttribute("errorMessage", "Invalid paper ID.");
-            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
             return;
         }
 
@@ -87,8 +86,7 @@ public class EditPaperServlet extends HttpServlet {
             Paper paper = paperDAO.getPaperById(paperId);
 
             if (paper == null) {
-                session.setAttribute("errorMessage", "Paper not found.");
-                response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+                response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
                 return;
             }
 
@@ -96,13 +94,11 @@ public class EditPaperServlet extends HttpServlet {
             request.getRequestDispatcher(VIEW_EDIT_PAPER).forward(request, response);
 
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Invalid paper ID format.");
             LOGGER.log(Level.WARNING, "Invalid paper ID format: {0}", paperIdParam);
-            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
         } catch (PaperDAO.DAOException e) {
-            session.setAttribute("errorMessage", "Database error occurred while loading paper.");
             LOGGER.log(Level.SEVERE, "Error loading paper for edit.", e);
-            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
         }
     }
 
@@ -134,14 +130,14 @@ public class EditPaperServlet extends HttpServlet {
         String yearParam    = request.getParameter("year");
         String chapter      = request.getParameter("chapter");
         String examType     = request.getParameter("examType");
+        String description  = request.getParameter("description");
 
         if (paperIdParam == null || paperIdParam.trim().isEmpty() ||
             subjectName == null || subjectName.trim().isEmpty() ||
             subjectCode == null || subjectCode.trim().isEmpty() ||
             yearParam == null || yearParam.trim().isEmpty()) {
 
-            session.setAttribute("errorMessage", "All required fields must be filled.");
-            response.sendRedirect(request.getContextPath() + "/editPaper?paperId=" + paperIdParam);
+            response.sendRedirect(request.getContextPath() + "/editPaper?paperId=" + paperIdParam + "&invalid=true");
             return;
         }
 
@@ -153,9 +149,7 @@ public class EditPaperServlet extends HttpServlet {
             int minYear = currentYear - 20;
 
             if (year < minYear || year > currentYear) {
-                String errorMsg = "Year must be between " + minYear + " and " + currentYear + ".";
-                session.setAttribute("errorMessage", errorMsg);
-                response.sendRedirect(request.getContextPath() + "/editPaper?paperId=" + paperIdParam);
+                response.sendRedirect(request.getContextPath() + "/editPaper?paperId=" + paperIdParam + "&invalid=true");
                 return;
             }
 
@@ -166,6 +160,7 @@ public class EditPaperServlet extends HttpServlet {
             paper.setYear(year);
             paper.setChapter(chapter != null && !chapter.trim().isEmpty() ? chapter.trim() : null);
             paper.setExamType(examType != null && !examType.trim().isEmpty() ? examType.trim() : null);
+            paper.setDescription(description != null && !description.trim().isEmpty() ? description.trim() : null);
 
             Part replacementFile = request.getPart("file");
             String replacementFileName = saveReplacementFileIfPresent(replacementFile);
@@ -181,24 +176,21 @@ public class EditPaperServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?updated=true");
                 return;
             } else {
-                session.setAttribute("errorMessage", "Failed to update paper.");
+                response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
+                return;
             }
 
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Invalid paper ID or year format.");
             LOGGER.log(Level.WARNING, "Invalid number format in edit form.");
         } catch (IllegalArgumentException e) {
-            session.setAttribute("errorMessage", e.getMessage());
             LOGGER.log(Level.WARNING, "Invalid edit paper input: {0}", e.getMessage());
         } catch (IOException e) {
-            session.setAttribute("errorMessage", "Failed to save replacement file.");
             LOGGER.log(Level.SEVERE, "Error saving replacement file.", e);
         } catch (PaperDAO.DAOException e) {
-            session.setAttribute("errorMessage", "Database error occurred while updating paper.");
             LOGGER.log(Level.SEVERE, "Error updating paper.", e);
         }
 
-        response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+        response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD + "?error=true");
     }
 
     private String saveReplacementFileIfPresent(Part filePart) throws IOException {

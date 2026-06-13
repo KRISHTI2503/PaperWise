@@ -72,6 +72,14 @@ public class AllPapersServlet extends HttpServlet {
             List<Paper> papers = paperDAO.getAllPapersWithVotes();
             request.setAttribute("papers", papers);
 
+            // Load comments for papers
+            com.paperwise.dao.CommentDAO commentDAO = new com.paperwise.dao.CommentDAO();
+            java.util.Map<Integer, List<com.paperwise.model.PaperComment>> commentsMap = new java.util.HashMap<>();
+            for (Paper p : papers) {
+                commentsMap.put(p.getPaperId(), commentDAO.getCommentsByPaperId(p.getPaperId()));
+            }
+            request.setAttribute("commentsMap", commentsMap);
+
             // Stat: total useful marks
             int totalUsefulMarks = paperDAO.getTotalUsefulMarks();
             request.setAttribute("totalUsefulMarks", totalUsefulMarks);
@@ -111,8 +119,7 @@ public class AllPapersServlet extends HttpServlet {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error loading All Papers page.", e);
-            request.setAttribute("errorMessage", "Failed to load papers. Please try again.");
-            request.getRequestDispatcher(VIEW_ALL_PAPERS).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/allPapers?error=true");
         }
     }
 }

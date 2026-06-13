@@ -86,14 +86,19 @@ public class AuthFilter implements Filter {
                 || path.equals(LOGIN_SERVLET)
                 || path.equals(REGISTER_PAGE)
                 || path.equals(REGISTER_SERVLET)
+                || path.equals("/forgotPassword")
+                || path.equals("/forgotPassword.jsp")
                 || path.equals("/logout")
                 || path.equals("/")
                 || path.equals("/index.html")
+                || path.equals("/error404.jsp")
+                || path.equals("/error500.jsp")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
                 || path.startsWith("/images/")
                 || path.startsWith("/static/")
-                || path.startsWith("/resources/");
+                || path.startsWith("/resources/")
+                || path.startsWith("/assets/");
     }
 
     private boolean isAdminOnlyResource(String requestURI, String contextPath) {
@@ -105,6 +110,7 @@ public class AuthFilter implements Filter {
                 || path.equals("/allPapers")
                 || path.equals("/students")
                 || path.equals("/adminRequests")
+                || path.equals("/updateRequest")
                 || path.equals("/editPaper")
                 || path.equals("/editPaper.jsp")
                 || path.equals("/deletePaper")

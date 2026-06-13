@@ -15,13 +15,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import com.paperwise.dao.CommentDAO;
+import com.paperwise.model.PaperComment;
 
 @WebServlet("/studentDashboard")
 public class StudentDashboardServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(StudentDashboardServlet.class.getName());
 
     private static final String VIEW_STUDENT_DASHBOARD = "/student-dashboard.jsp";
     private static final String ATTR_LOGGED_IN_USER = "loggedInUser";
@@ -37,8 +46,7 @@ public class StudentDashboardServlet extends HttpServlet {
             voteDAO = new VoteDAO();
             paperRequestDAO = new PaperRequestDAO();
         } catch (Exception e) {
-            System.err.println("Failed to initialise DAOs in StudentDashboardServlet.");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to initialise DAOs in StudentDashboardServlet.", e);
             throw new ServletException("StudentDashboardServlet initialisation failed.", e);
         }
     }
@@ -46,6 +54,8 @@ public class StudentDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        LOGGER.log(Level.FINE, "StudentDashboard GET: {0}", request.getQueryString());
 
         HttpSession session = request.getSession(false);
         if (session == null) {
@@ -80,8 +90,14 @@ public class StudentDashboardServlet extends HttpServlet {
                 papers = paperDAO.getAllPapersWithVotes();
             }
 
-            // Mark which papers this user has already voted on
+            if (papers == null) {
+                papers = new ArrayList<>();
+            }
+
             Set<Integer> votedPapers = voteDAO.getUserVotedPapers(loggedInUser.getUserId());
+            if (votedPapers == null) {
+                votedPapers = new HashSet<>();
+            }
             for (Paper paper : papers) {
                 if (votedPapers.contains(paper.getPaperId())) {
                     paper.setAlreadyMarked(true);
@@ -89,7 +105,6 @@ public class StudentDashboardServlet extends HttpServlet {
             }
             request.setAttribute("votedPapers", votedPapers);
 
-            // Stat card counts
             int totalPapers      = paperDAO.getAllPapers().size();
             int totalUsefulMarks = paperDAO.getTotalUsefulMarks();
             int myMarksCount     = votedPapers.size();
@@ -98,13 +113,25 @@ public class StudentDashboardServlet extends HttpServlet {
             request.setAttribute("totalUsefulMarks", totalUsefulMarks);
             request.setAttribute("myMarksCount",     myMarksCount);
 
-            // Year filter support
             List<Integer> availableYears = paperDAO.getDistinctYears();
+            if (availableYears == null) {
+                availableYears = new ArrayList<>();
+            }
             request.setAttribute("availableYears", availableYears);
             request.setAttribute("papers", papers);
 
-            // My requests
+            CommentDAO commentDAO = new CommentDAO();
+            Map<Integer, List<PaperComment>> commentsMap = new HashMap<>();
+            for (Paper p : papers) {
+                List<PaperComment> comments = commentDAO.getCommentsByPaperId(p.getPaperId());
+                commentsMap.put(p.getPaperId(), comments != null ? comments : new ArrayList<>());
+            }
+            request.setAttribute("commentsMap", commentsMap);
+
             List<PaperRequest> myRequests = paperRequestDAO.getRequestsByUserId(loggedInUser.getUserId());
+            if (myRequests == null) {
+                myRequests = new ArrayList<>();
+            }
             request.setAttribute("myRequests", myRequests);
 
             String searchQuery = request.getParameter("search");
@@ -115,9 +142,15 @@ public class StudentDashboardServlet extends HttpServlet {
             request.getRequestDispatcher(VIEW_STUDENT_DASHBOARD).forward(request, response);
 
         } catch (Exception e) {
-            System.err.println("Error loading student dashboard:");
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "Failed to load dashboard. Please try again.");
+            LOGGER.log(Level.SEVERE, "Error loading student dashboard.", e);
+            request.setAttribute("papers", new ArrayList<Paper>());
+            request.setAttribute("myRequests", new ArrayList<PaperRequest>());
+            request.setAttribute("commentsMap", new HashMap<Integer, List<PaperComment>>());
+            request.setAttribute("votedPapers", new HashSet<Integer>());
+            request.setAttribute("totalPapers", 0);
+            request.setAttribute("totalUsefulMarks", 0);
+            request.setAttribute("myMarksCount", 0);
+            request.setAttribute("availableYears", new ArrayList<Integer>());
             request.getRequestDispatcher(VIEW_STUDENT_DASHBOARD).forward(request, response);
         }
     }

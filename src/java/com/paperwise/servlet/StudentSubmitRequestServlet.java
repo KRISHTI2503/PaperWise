@@ -103,7 +103,6 @@ public class StudentSubmitRequestServlet extends HttpServlet {
         } catch (IllegalArgumentException e) {
             out.print("{\"success\":false,\"error\":\"" + escJson(e.getMessage()) + "\"}");
         } catch (Exception e) {
-            e.printStackTrace();
             out.print("{\"success\":false,\"error\":\"Server error. Please try again.\"}");
         }
     }

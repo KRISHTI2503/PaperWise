@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -110,11 +112,11 @@ public class LoginServlet extends HttpServlet {
     private void forwardWithError(HttpServletRequest request,
                                   HttpServletResponse response,
                                   String message)
-            throws ServletException, IOException {
+            throws IOException {
 
-        request.setAttribute(ATTR_ERROR, message);
-        RequestDispatcher dispatcher = request.getRequestDispatcher(VIEW_LOGIN);
-        dispatcher.forward(request, response);
+        String encoded = URLEncoder.encode(message, StandardCharsets.UTF_8);
+        response.sendRedirect(request.getContextPath() + VIEW_LOGIN
+                + "?msg=" + encoded + "&msgType=error");
     }
 
     private String sanitise(String value) {

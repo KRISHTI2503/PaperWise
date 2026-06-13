@@ -5,13 +5,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - PaperWise</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/paperwise.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/tabler-icons/css/tabler-icons.min.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
+    <script>
+        (function(){var t=localStorage.getItem('pw-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();
+    </script>
+    <script src="${pageContext.request.contextPath}/js/paperwise.js" defer></script>
     <style>
+        :root {
+            --reg-bg: #0d1b2a;
+            --reg-card-bg: #ffffff;
+            --reg-card-text: #0d1b2a;
+            --reg-card-subtitle: #6b7280;
+            --reg-alert-err-bg: #fff0f0;
+            --reg-alert-err-border: #f5c6cb;
+            --reg-alert-err-text: #c0392b;
+            --reg-alert-suc-bg: #f0fff4;
+            --reg-alert-suc-border: #9ae6b4;
+            --reg-alert-suc-text: #276749;
+            --reg-label: #374151;
+            --reg-input-bg: #f9fafb;
+            --reg-input-border: #e5e7eb;
+            --reg-input-text: #111827;
+            --reg-input-focus: #4f7396;
+            --reg-pwd-toggle: #9ca3af;
+            --reg-helper-text: #9ca3af;
+            --reg-btn-bg: #1a3a5c;
+            --reg-btn-text: #ffffff;
+            --reg-btn-hover: #0d2a45;
+            --reg-signin-text: #6b7280;
+            --reg-signin-link: #4f7396;
+            --reg-signin-link-hover: #1a3a5c;
+            --reg-footer: #9ca3af;
+        }
+
+        :root[data-theme="dark"] {
+            --reg-bg: #070e17;
+            --reg-card-bg: #131b2e;
+            --reg-card-text: #f8fafc;
+            --reg-card-subtitle: #94a3b8;
+            --reg-alert-err-bg: rgba(239, 68, 68, 0.1);
+            --reg-alert-err-border: rgba(239, 68, 68, 0.2);
+            --reg-alert-err-text: #f87171;
+            --reg-alert-suc-bg: rgba(34, 197, 94, 0.1);
+            --reg-alert-suc-border: rgba(34, 197, 94, 0.2);
+            --reg-alert-suc-text: #4ade80;
+            --reg-label: #cbd5e1;
+            --reg-input-bg: #1e293b;
+            --reg-input-border: #334155;
+            --reg-input-text: #f8fafc;
+            --reg-input-focus: #3b82f6;
+            --reg-pwd-toggle: #64748b;
+            --reg-helper-text: #64748b;
+            --reg-btn-bg: #3b82f6;
+            --reg-btn-text: #ffffff;
+            --reg-btn-hover: #2563eb;
+            --reg-signin-text: #94a3b8;
+            --reg-signin-link: #3b82f6;
+            --reg-signin-link-hover: #60a5fa;
+            --reg-footer: #64748b;
+        }
+
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #0d1b2a;
+            background: var(--reg-bg);
             min-height: 100vh;
             display: flex;
             align-items: flex-start;
@@ -19,6 +79,7 @@
             padding: 28px 20px;
             position: relative;
             overflow-x: hidden;
+            transition: background 0.3s ease;
         }
 
         /* ── Floating background shapes (identical set to login) ── */
@@ -36,14 +97,15 @@
         .register-card {
             position: relative;
             z-index: 1;
-            background: #ffffff;
+            background: var(--reg-card-bg);
             border-radius: 20px;
             padding: 40px 36px 32px;
             width: 100%;
             max-width: 420px;
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid var(--reg-card-border);
             box-shadow: 0 24px 64px rgba(0,0,0,0.45);
             animation: cardIn 0.45s ease-out both;
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(28px); }
@@ -66,14 +128,14 @@
             flex-shrink: 0;
         }
         .logo-icon i { font-size: 20px; color: #ffffff; margin: 0; }
-        .brand-name  { font-size: 24px; font-weight: 700; color: #0d1b2a; letter-spacing: -0.3px; }
-        .card-subtitle { font-size: 13px; color: #6b7280; }
+        .brand-name  { font-size: 24px; font-weight: 700; color: var(--reg-card-text); letter-spacing: -0.3px; }
+        .card-subtitle { font-size: 13px; color: var(--reg-card-subtitle); }
 
         /* ── Alerts ── */
         .alert-error {
-            background: #fff0f0;
-            border: 1px solid #f5c6cb;
-            color: #c0392b;
+            background: var(--reg-alert-err-bg);
+            border: 1px solid var(--reg-alert-err-border);
+            color: var(--reg-alert-err-text);
             border-radius: 8px;
             padding: 10px 14px;
             margin-bottom: 16px;
@@ -82,12 +144,12 @@
             align-items: center;
             gap: 8px;
         }
-        .alert-error i { color: #c0392b; font-size: 13px; margin: 0; flex-shrink: 0; }
+        .alert-error i { color: var(--reg-alert-err-text); font-size: 13px; margin: 0; flex-shrink: 0; }
 
         .alert-success {
-            background: #f0fff4;
-            border: 1px solid #9ae6b4;
-            color: #276749;
+            background: var(--reg-alert-suc-bg);
+            border: 1px solid var(--reg-alert-suc-border);
+            color: var(--reg-alert-suc-text);
             border-radius: 8px;
             padding: 10px 14px;
             margin-bottom: 16px;
@@ -96,7 +158,7 @@
             align-items: center;
             gap: 8px;
         }
-        .alert-success i { color: #276749; font-size: 13px; margin: 0; flex-shrink: 0; }
+        .alert-success i { color: var(--reg-alert-suc-text); font-size: 13px; margin: 0; flex-shrink: 0; }
 
         /* ── Form ── */
         .form-group { margin-bottom: 16px; }
@@ -105,7 +167,7 @@
             display: block;
             font-size: 13px;
             font-weight: 500;
-            color: #374151;
+            color: var(--reg-label);
             margin-bottom: 6px;
         }
         .form-group label .req { color: #e53e3e; margin-left: 2px; }
@@ -126,18 +188,18 @@
         .form-group input {
             width: 100%;
             padding: 11px 14px 11px 38px;
-            border: 1.5px solid #e5e7eb;
+            border: 1.5px solid var(--reg-input-border);
             border-radius: 10px;
-            background: #f9fafb;
+            background: var(--reg-input-bg);
             font-size: 14px;
-            color: #111827;
+            color: var(--reg-input-text);
             transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
             outline: none;
         }
         .form-group input::placeholder { color: #9ca3af; }
         .form-group input:focus {
-            border-color: #4f7396;
-            background: #ffffff;
+            border-color: var(--reg-input-focus);
+            background: var(--reg-card-bg);
             box-shadow: 0 0 0 3px rgba(79,115,150,0.12);
         }
         /* fields with eye toggle need right padding */
@@ -151,18 +213,18 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #9ca3af;
+            color: var(--reg-pwd-toggle);
             padding: 4px;
             line-height: 1;
             transition: color 0.2s;
         }
-        .pwd-toggle:hover  { color: #4f7396; }
+        .pwd-toggle:hover  { color: var(--reg-input-focus); }
         .pwd-toggle:focus  { outline: none; }
         .pwd-toggle i      { font-size: 13px; margin: 0; }
 
         .helper-text {
             font-size: 11px;
-            color: #9ca3af;
+            color: var(--reg-helper-text);
             margin-top: 5px;
             line-height: 1.5;
         }
@@ -171,8 +233,8 @@
         .btn-create {
             width: 100%;
             padding: 13px;
-            background: #1a3a5c;
-            color: #ffffff;
+            background: var(--reg-btn-bg);
+            color: var(--reg-btn-text);
             border: none;
             border-radius: 10px;
             font-size: 15px;
@@ -186,7 +248,7 @@
             margin-top: 20px;
         }
         .btn-create i      { font-size: 14px; margin: 0; }
-        .btn-create:hover  { background: #0d2a45; }
+        .btn-create:hover  { background: var(--reg-btn-hover); }
         .btn-create:active { transform: scale(0.98); }
         .btn-create:focus  { outline: none; box-shadow: 0 0 0 3px rgba(26,58,92,0.25); }
 
@@ -194,23 +256,51 @@
         .signin-link {
             text-align: center;
             font-size: 13px;
-            color: #6b7280;
+            color: var(--reg-signin-text);
             margin-top: 16px;
         }
         .signin-link a {
-            color: #4f7396;
+            color: var(--reg-signin-link);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.2s;
         }
-        .signin-link a:hover { color: #1a3a5c; text-decoration: underline; }
+        .signin-link a:hover { color: var(--reg-signin-link-hover); text-decoration: underline; }
 
         /* ── Footer ── */
         .card-footer {
             text-align: center;
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--reg-footer);
             margin-top: 16px;
+        }
+
+        /* ── Theme Toggle — fixed top-right ── */
+        #pwDarkToggle {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            z-index: 9999;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+        #pwDarkToggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        #pwDarkToggle:active { transform: scale(0.95); }
+        [data-theme="dark"] #pwDarkToggle {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.10);
         }
 
         /* ── Responsive ── */
@@ -218,9 +308,72 @@
             .register-card { padding: 32px 18px 28px; }
             .brand-name    { font-size: 21px; }
         }
-    </style>
+    
+.pw-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.pw-toast {
+  background: #0f2744;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  max-width: 380px;
+  box-shadow: 0 8px 24px rgba(15,39,68,0.18);
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  pointer-events: auto;
+}
+
+.pw-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pw-toast.success .pw-toast-icon { color: #4ade80; }
+.pw-toast.error .pw-toast-icon   { color: #f87171; }
+.pw-toast.info .pw-toast-icon    { color: #60a5fa; }
+.pw-toast.warning .pw-toast-icon { color: #fbbf24; }
+
+.pw-toast-icon { font-size: 18px; flex-shrink: 0; }
+.pw-toast-msg  { flex: 1; line-height: 1.4; }
+.pw-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.pw-toast-close:hover { color: #fff; }
+</style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/ui-consistency.css">
 </head>
 <body>
+
+    <!-- Theme Toggle — fixed top-right corner -->
+    <button id="pwDarkToggle" title="Toggle dark mode" aria-label="Toggle dark/light mode">
+      <i class="fa-solid fa-moon" style="font-size:14px"></i>
+    </button>
 
     <!-- Floating background document shapes (same as login) -->
     <div class="bg-shapes" aria-hidden="true">
@@ -307,27 +460,9 @@
             <p class="card-subtitle">Create your account</p>
         </div>
 
-        <%-- Error message from RegisterServlet --%>
-        <%
-            String errorMessage = (String) request.getAttribute("errorMessage");
-            if (errorMessage != null) {
-        %>
-            <div class="alert-error" role="alert">
-                <i class="fa-solid fa-circle-exclamation"></i>
-                <%= errorMessage %>
-            </div>
-        <% } %>
+        
 
-        <%-- Success message (if any) --%>
-        <%
-            String successMessage = (String) request.getAttribute("successMessage");
-            if (successMessage != null) {
-        %>
-            <div class="alert-success" role="alert">
-                <i class="fa-solid fa-circle-check"></i>
-                <%= successMessage %>
-            </div>
-        <% } %>
+        
 
         <!-- Form — action and all field names unchanged so RegisterServlet keeps working -->
         <form action="${pageContext.request.contextPath}/register" method="post" novalidate
@@ -449,8 +584,66 @@
             }
         }
 
+        function validateEmail(email) {
+            const regex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+            if (!regex.test(email)) return false;
+            const parts = email.split('@');
+            if (parts.length !== 2) return false;
+            const domainParts = parts[1].split('.');
+            if (domainParts.length < 2) return false;
+            for (const part of domainParts) {
+                if (part.length === 0) return false;
+            }
+            const tld = domainParts[domainParts.length - 1];
+            if (tld.length < 2) return false;
+            const domainName = domainParts[domainParts.length - 2];
+            if (domainName.length < 2) return false;
+            return true;
+        }
+
+        const emailInput = document.getElementById('email')
+            || document.querySelector('input[name="email"]');
+
+        function showEmailError(msg) {
+            let err = document.getElementById('emailError');
+            if (!err && emailInput) {
+                err = document.createElement('div');
+                err.id = 'emailError';
+                err.style.cssText = 'color:#dc2626;font-size:11.5px;margin-top:4px';
+                const parent = emailInput.parentNode && emailInput.parentNode.parentNode
+                    ? emailInput.parentNode.parentNode : emailInput.parentNode;
+                if (parent) parent.appendChild(err);
+            }
+            if (err) err.textContent = msg;
+        }
+
+        function hideEmailError() {
+            const err = document.getElementById('emailError');
+            if (err) err.remove();
+        }
+
+        if (emailInput) {
+            emailInput.addEventListener('blur', function() {
+                const val = this.value.trim();
+                if (val && !validateEmail(val)) {
+                    this.style.borderColor = '#dc2626';
+                    showEmailError('Please enter a valid email address (e.g. user@gmail.com)');
+                } else {
+                    this.style.borderColor = '';
+                    hideEmailError();
+                }
+            });
+        }
+
         // Client-side password match validation
         function validateForm() {
+            const email = emailInput ? emailInput.value.trim() : '';
+            if (email && !validateEmail(email)) {
+                emailInput.style.borderColor = '#dc2626';
+                showEmailError('Please enter a valid email (e.g. user@gmail.com)');
+                emailInput.focus();
+                return false;
+            }
             const pwd     = document.getElementById('password').value;
             const confirm = document.getElementById('confirmPassword').value;
             if (pwd !== confirm) {
@@ -464,6 +657,82 @@
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
+
     </script>
+
+<div class="pw-toast-container" id="pwToastContainer"></div>
+<script>
+function showToast(message, type, duration) {
+  type = type || 'success';
+  duration = duration || 4000;
+
+  const container = document.getElementById('pwToastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'pw-toast ' + type;
+
+  const icons = {
+    success: 'ti-circle-check',
+    error:   'ti-circle-x',
+    info:    'ti-info-circle',
+    warning: 'ti-alert-triangle'
+  };
+
+  toast.innerHTML =
+    '<i class="ti ' + icons[type] + ' pw-toast-icon"></i>' +
+    '<span class="pw-toast-msg">' + message + '</span>' +
+    '<button type="button" class="pw-toast-close" onclick="this.closest(\'.pw-toast\').remove()">' +
+    '<i class="ti ti-x"></i></button>';
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, duration);
+}
+
+window.addEventListener('load', function() {
+  const p = new URLSearchParams(window.location.search);
+
+  const messages = {
+    'uploaded':        ['Paper uploaded successfully!',    'success'],
+    'updated':         ['Paper updated successfully!',     'success'],
+    'deleted':         ['Paper deleted successfully!',     'success'],
+    'marked':          ['Marked as useful!',               'success'],
+    'unmarked':        ['Removed from useful marks.',      'info'],
+    'voted':           ['Difficulty vote saved!',          'success'],
+    'rated':           ['Difficulty vote saved!',          'success'],
+    'commented':       ['Comment posted!',                 'success'],
+    'comment_deleted': ['Comment deleted.',                'info'],
+    'submitted':       ['Request submitted successfully!', 'success'],
+    'request_deleted': ['Request deleted.',                'info'],
+    'status_updated':  ['Status updated successfully!',    'success'],
+    'logged_out':      ['You have been logged out.',       'info'],
+    'registered':      ['Account created! Please log in.', 'success'],
+    'error':           ['Something went wrong. Try again.', 'error'],
+    'unauthorized':    ['Please log in to continue.',      'warning'],
+    'invalid':         ['Invalid input. Please check your fields.', 'warning'],
+  };
+
+  for (const [param, [msg, type]] of Object.entries(messages)) {
+    if (p.get(param) === 'true' || p.get(param) === '1') {
+      showToast(msg, type);
+      break;
+    }
+  }
+
+  const customMsg = p.get('msg');
+  const customType = p.get('msgType') || 'info';
+  if (customMsg) {
+    showToast(decodeURIComponent(customMsg), customType);
+  }
+});
+</script>
+
+<div id="pwToast"><i class="ti ti-circle-check"></i><span id="pwToastMsg"></span></div>
 </body>
 </html>

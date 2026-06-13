@@ -103,8 +103,7 @@ public class StudentsServlet extends HttpServlet {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error loading Students page.", e);
-            request.setAttribute("errorMessage", "Failed to load students. Please try again.");
-            request.getRequestDispatcher(VIEW_STUDENTS).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/students?error=true");
         }
     }
 }

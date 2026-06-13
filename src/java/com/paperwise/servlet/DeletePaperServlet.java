@@ -60,10 +60,10 @@ public class DeletePaperServlet extends HttpServlet {
             return;
         }
 
+        String contextPath = request.getContextPath();
         String paperIdParam = request.getParameter("paperId");
         if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
-            session.setAttribute("errorMessage", "Invalid paper ID.");
-            response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+            response.sendRedirect(contextPath + REDIRECT_ADMIN_DASHBOARD + "?error=true");
             return;
         }
 
@@ -72,8 +72,7 @@ public class DeletePaperServlet extends HttpServlet {
 
             Paper paper = paperDAO.getPaperById(paperId);
             if (paper == null) {
-                session.setAttribute("errorMessage", "Paper not found.");
-                response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+                response.sendRedirect(contextPath + REDIRECT_ADMIN_DASHBOARD + "?error=true");
                 return;
             }
 
@@ -97,22 +96,18 @@ public class DeletePaperServlet extends HttpServlet {
             boolean success = paperDAO.deletePaper(paperId);
 
             if (success) {
-                session.setAttribute("successMessage",
-                        "Paper '" + paper.getSubjectName() + "' deleted successfully!");
                 LOGGER.log(Level.INFO, "Paper ID {0} deleted by user {1}",
                         new Object[]{paperId, loggedInUser.getUsername()});
-            } else {
-                session.setAttribute("errorMessage", "Failed to delete paper from database.");
+                response.sendRedirect(contextPath + REDIRECT_ADMIN_DASHBOARD + "?deleted=true");
+                return;
             }
 
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Invalid paper ID format.");
             LOGGER.log(Level.WARNING, "Invalid paper ID format: {0}", paperIdParam);
         } catch (PaperDAO.DAOException e) {
-            session.setAttribute("errorMessage", "Database error occurred while deleting paper.");
             LOGGER.log(Level.SEVERE, "Error deleting paper.", e);
         }
 
-        response.sendRedirect(request.getContextPath() + REDIRECT_ADMIN_DASHBOARD);
+        response.sendRedirect(contextPath + REDIRECT_ADMIN_DASHBOARD + "?error=true");
     }
 }

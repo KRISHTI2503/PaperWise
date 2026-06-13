@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles paper downloads.
@@ -25,6 +27,7 @@ import java.io.OutputStream;
 public class DownloadPaperServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(DownloadPaperServlet.class.getName());
     private static final String UPLOAD_DIR = ViewFileServlet.UPLOAD_DIRECTORY;
 
     private PaperDAO paperDAO;
@@ -78,10 +81,8 @@ public class DownloadPaperServlet extends HttpServlet {
 
         File file = new File(UPLOAD_DIR, fileName);
         if (!file.exists() || !file.isFile()) {
-            System.err.println("[DownloadPaperServlet] FILE NOT FOUND");
-            System.err.println("[DownloadPaperServlet]   Expected path : " + file.getAbsolutePath());
-            System.err.println("[DownloadPaperServlet]   fileName from DB: " + fileName);
-            System.err.println("[DownloadPaperServlet]   Upload dir exists: " + new File(UPLOAD_DIR).exists());
+            LOGGER.log(Level.WARNING, "[DownloadPaperServlet] FILE NOT FOUND - expected: {0}, fileName: {1}, dir exists: {2}",
+                    new Object[]{file.getAbsolutePath(), fileName, new File(UPLOAD_DIR).exists()});
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
                     "File not found on disk: " + file.getAbsolutePath()
                     + " — the file may have been deleted or never uploaded successfully.");

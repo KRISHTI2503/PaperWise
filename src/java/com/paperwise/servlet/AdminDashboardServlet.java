@@ -15,8 +15,12 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.paperwise.dao.CommentDAO;
+import com.paperwise.model.PaperComment;
 
 @WebServlet("/adminDashboard")
 public class AdminDashboardServlet extends HttpServlet {
@@ -66,9 +70,16 @@ public class AdminDashboardServlet extends HttpServlet {
         }
 
         try {
-            // Papers list (with vote/difficulty counts for the table)
             List<Paper> papers = paperDAO.getAllPapersWithVotes();
             request.setAttribute("papers", papers);
+
+            // Load comments for papers
+            CommentDAO commentDAO = new CommentDAO();
+            Map<Integer, List<PaperComment>> commentsMap = new HashMap<>();
+            for (Paper p : papers) {
+                commentsMap.put(p.getPaperId(), commentDAO.getCommentsByPaperId(p.getPaperId()));
+            }
+            request.setAttribute("commentsMap", commentsMap);
 
             // Stat card: total students
             int totalStudents = userDAO.getStudentCount();
@@ -116,8 +127,7 @@ public class AdminDashboardServlet extends HttpServlet {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error loading admin dashboard.", e);
-            request.setAttribute("errorMessage", "Failed to load dashboard. Please try again.");
-            request.getRequestDispatcher(VIEW_ADMIN_DASHBOARD).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/adminDashboard?error=true");
         }
     }
 }

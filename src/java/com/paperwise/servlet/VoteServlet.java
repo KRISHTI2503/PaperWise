@@ -12,11 +12,14 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/votePaper")
 public class VoteServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(VoteServlet.class.getName());
 
     private VoteDAO voteDAO;
 
@@ -25,8 +28,7 @@ public class VoteServlet extends HttpServlet {
         try {
             voteDAO = new VoteDAO();
         } catch (Exception e) {
-            System.err.println("Failed to initialise VoteDAO in VoteServlet.");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to initialise VoteDAO in VoteServlet.", e);
             throw new ServletException("VoteServlet initialisation failed.", e);
         }
     }
@@ -36,27 +38,28 @@ public class VoteServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        String contextPath = request.getContextPath();
+        String dashboard = contextPath + "/studentDashboard";
+
         if (session == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
         User user = (User) session.getAttribute("loggedInUser");
         if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
         if (!"student".equalsIgnoreCase(user.getRole())) {
-            session.setAttribute("errorMessage", "Only students can vote for papers.");
-            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            response.sendRedirect(dashboard + "?error=true");
             return;
         }
 
         String paperIdParam = request.getParameter("id");
         if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
-            session.setAttribute("errorMessage", "Invalid paper ID.");
-            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            response.sendRedirect(dashboard + "?error=true");
             return;
         }
 
@@ -65,34 +68,26 @@ public class VoteServlet extends HttpServlet {
             int userId = user.getUserId();
 
             if (voteDAO.hasUserVoted(paperId, userId)) {
-                session.setAttribute("errorMessage", "You already voted.");
-                response.sendRedirect(request.getContextPath() + "/studentDashboard");
+                response.sendRedirect(dashboard + "?error=true");
                 return;
             }
 
             boolean success = voteDAO.insertVote(paperId, userId);
 
             if (success) {
-                session.setAttribute("successMessage", "Vote added successfully!");
-            } else {
-                session.setAttribute("errorMessage", "Failed to add vote. Please try again.");
+                response.sendRedirect(dashboard + "?marked=true");
+                return;
             }
 
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Invalid paper ID format.");
-            System.err.println("Invalid paper ID format: " + paperIdParam);
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Invalid paper ID format: {0}", paperIdParam);
         } catch (SQLException e) {
-            session.setAttribute("errorMessage", "Database error occurred. Please try again.");
-            System.err.println("Database error while processing vote:");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while processing vote.", e);
         } catch (Exception e) {
-            session.setAttribute("errorMessage", "An error occurred. Please try again.");
-            System.err.println("Unexpected error while processing vote:");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Unexpected error while processing vote.", e);
         }
 
-        response.sendRedirect(request.getContextPath() + "/studentDashboard");
+        response.sendRedirect(dashboard + "?error=true");
     }
 
     @Override

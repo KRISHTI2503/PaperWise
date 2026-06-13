@@ -10,8 +10,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class VoteDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(VoteDAO.class.getName());
 
     private static final String JNDI_DATASOURCE = "java:comp/env/jdbc/paperwise";
 
@@ -39,8 +43,7 @@ public class VoteDAO {
                 Context initContext = new InitialContext();
                 dataSource = (DataSource) initContext.lookup(JNDI_DATASOURCE);
             } catch (NamingException e) {
-                System.err.println("JNDI lookup failed for resource: " + JNDI_DATASOURCE);
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "JNDI lookup failed for resource: {0}", JNDI_DATASOURCE);
                 throw new DAOException(
                         "Unable to locate DataSource via JNDI. " +
                         "Verify that '" + JNDI_DATASOURCE + "' is declared in context.xml.", e);
@@ -68,8 +71,7 @@ public class VoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while checking vote for paper ID: " + paperId + ", user ID: " + userId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while checking vote for paper ID: {0}", paperId + ", user ID: " + userId);
             throw e;
         }
 
@@ -80,8 +82,7 @@ public class VoteDAO {
         try {
             return hasUserVoted(paperId, userId);
         } catch (SQLException e) {
-            System.err.println("Error checking if user marked paper:");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error checking if user marked paper:");
             return false;
         }
     }
@@ -102,10 +103,9 @@ public class VoteDAO {
             return rowsAffected > 0;
 
         } catch (SQLException e) {
-            System.err.println("SQL ERROR while adding vote for paper ID: " + paperId + ", user ID: " + userId);
-            System.err.println("SQL State: " + e.getSQLState());
-            System.err.println("Error Code: " + e.getErrorCode());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "SQL ERROR while adding vote for paper ID: {0}", paperId + ", user ID: " + userId);
+            LOGGER.log(Level.SEVERE, "SQL State: {0}", e.getSQLState());
+            LOGGER.log(Level.SEVERE, "Error Code: {0}", e.getErrorCode());
             throw e;
         }
     }
@@ -114,8 +114,7 @@ public class VoteDAO {
         try {
             insertVote(paperId, userId);
         } catch (SQLException e) {
-            System.err.println("ERROR in addMark for paper " + paperId + ", user " + userId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "ERROR in addMark for paper {0}", paperId + ", user " + userId);
         }
     }
 
@@ -132,8 +131,7 @@ public class VoteDAO {
             return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            System.err.println("Database error while removing vote for paper ID: " + paperId + ", user ID: " + userId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while removing vote for paper ID: {0}", paperId + ", user ID: " + userId);
             throw e;
         }
     }
@@ -155,8 +153,7 @@ public class VoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting vote count for paper ID: " + paperId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while getting vote count for paper ID: {0}", paperId);
             throw e;
         }
 
@@ -182,8 +179,7 @@ public class VoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting voted papers for user ID: " + userId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while getting voted papers for user ID: {0}", userId);
             throw e;
         }
 

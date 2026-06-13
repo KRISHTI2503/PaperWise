@@ -93,9 +93,7 @@ public class RequestPaperServlet extends HttpServlet {
             subjectCode == null || subjectCode.trim().isEmpty() ||
             yearStr == null || yearStr.trim().isEmpty()) {
 
-            request.setAttribute("errorMessage", "Subject name, subject code, and year are required.");
-            preserveFormData(request, subjectName, subjectCode, yearStr, description);
-            request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/requestPaper?invalid=true");
             return;
         }
 
@@ -106,10 +104,7 @@ public class RequestPaperServlet extends HttpServlet {
             int minYear = currentYear - 20;
 
             if (year < minYear || year > currentYear) {
-                String errorMsg = "Year must be between " + minYear + " and " + currentYear + ".";
-                request.setAttribute("errorMessage", errorMsg);
-                preserveFormData(request, subjectName, subjectCode, yearStr, description);
-                request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/requestPaper?invalid=true");
                 return;
             }
 
@@ -123,36 +118,24 @@ public class RequestPaperServlet extends HttpServlet {
             boolean success = requestDAO.saveRequest(paperRequest);
 
             if (success) {
-                session.setAttribute("successMessage",
-                        "Paper request for '" + subjectName + "' submitted successfully!");
                 LOGGER.log(Level.INFO,
                         "Paper request submitted by user {0}: {1} ({2}) - Year {3}",
                         new Object[]{loggedInUser.getUsername(), subjectName, subjectCode, year});
 
                 response.sendRedirect(request.getContextPath() + "/requestPaper?submitted=true");
             } else {
-                request.setAttribute("errorMessage", "Failed to submit request. Please try again.");
-                preserveFormData(request, subjectName, subjectCode, yearStr, description);
-                request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/requestPaper?error=true");
             }
 
         } catch (NumberFormatException e) {
-            request.setAttribute("errorMessage", "Year must be a valid number.");
-            preserveFormData(request, subjectName, subjectCode, yearStr, description);
-            request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/requestPaper?invalid=true");
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("errorMessage", e.getMessage());
-            preserveFormData(request, subjectName, subjectCode, yearStr, description);
-            request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/requestPaper?invalid=true");
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error submitting paper request.", e);
-            e.printStackTrace();
-            request.setAttribute("errorMessage",
-                    "An unexpected error occurred. Please try again.");
-            preserveFormData(request, subjectName, subjectCode, yearStr, description);
-            request.getRequestDispatcher(VIEW_REQUEST_FORM).forward(request, response);
+                        response.sendRedirect(request.getContextPath() + "/requestPaper?error=true");
         }
     }
 

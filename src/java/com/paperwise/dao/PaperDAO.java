@@ -22,12 +22,12 @@ public class PaperDAO {
     private static final String JNDI_DATASOURCE = "java:comp/env/jdbc/paperwise";
 
     private static final String SQL_INSERT_PAPER =
-            "INSERT INTO papers (subject_name, subject_code, year, chapter, file_url, uploaded_by, exam_type) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO papers (subject_name, subject_code, year, chapter, file_url, uploaded_by, exam_type, description) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_FIND_ALL_PAPERS =
             "SELECT p.paper_id, p.subject_name, p.subject_code, p.year, p.chapter, p.file_url, " +
-            "       p.uploaded_by, p.created_at, u.username " +
+            "       p.uploaded_by, p.created_at, p.exam_type, p.description, u.username " +
             "FROM papers p " +
             "LEFT JOIN users u ON p.uploaded_by = u.user_id " +
             "ORDER BY p.created_at DESC";
@@ -51,7 +51,7 @@ public class PaperDAO {
 
     private static final String SQL_FIND_BY_ID =
             "SELECT p.paper_id, p.subject_name, p.subject_code, p.year, p.chapter, p.file_url, " +
-            "       p.uploaded_by, p.created_at, u.username " +
+            "       p.uploaded_by, p.created_at, p.exam_type, p.description, u.username " +
             "FROM papers p " +
             "LEFT JOIN users u ON p.uploaded_by = u.user_id " +
             "WHERE p.paper_id = ?";
@@ -60,11 +60,11 @@ public class PaperDAO {
             "DELETE FROM papers WHERE paper_id = ?";
 
     private static final String SQL_UPDATE_PAPER =
-            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ? " +
+            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ?, description = ? " +
             "WHERE paper_id = ?";
 
     private static final String SQL_UPDATE_PAPER_WITH_FILE =
-            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ?, file_url = ? " +
+            "UPDATE papers SET subject_name = ?, subject_code = ?, year = ?, chapter = ?, exam_type = ?, file_url = ?, description = ? " +
             "WHERE paper_id = ?";
 
     private static final String SQL_GET_DISTINCT_YEARS =
@@ -155,6 +155,12 @@ public class PaperDAO {
                 statement.setNull(7, java.sql.Types.VARCHAR);
             }
 
+            if (paper.getDescription() != null && !paper.getDescription().isBlank()) {
+                statement.setString(8, paper.getDescription().trim());
+            } else {
+                statement.setNull(8, java.sql.Types.VARCHAR);
+            }
+
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -223,6 +229,87 @@ public class PaperDAO {
      */
     public List<Paper> getAllPapersWithStats() {
         return getAllPapersWithVotes();
+    }
+
+    public List<Paper> getMarkedPapersByUser(int userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("User ID must be a positive integer.");
+        }
+
+        List<Paper> list = new ArrayList<>();
+
+        try (Connection connection = getDataSource().getConnection()) {
+            boolean hasVoteCreatedAt = columnExists(connection, "votes", "created_at");
+            String markedAtExpression = hasVoteCreatedAt ? "v.created_at" : "p.created_at";
+            String sql =
+                "SELECT p.*, u.username, " +
+                "       " + markedAtExpression + " AS marked_at, " +
+                "       COALESCE((SELECT COUNT(*) FROM votes vx " +
+                "           WHERE vx.paper_id = p.paper_id), 0) AS useful_count, " +
+                "       COALESCE((SELECT COUNT(*) FROM difficulty_votes dv " +
+                "           WHERE dv.paper_id = p.paper_id " +
+                "           AND dv.difficulty_level = 'easy'), 0) AS easy_count, " +
+                "       COALESCE((SELECT COUNT(*) FROM difficulty_votes dv " +
+                "           WHERE dv.paper_id = p.paper_id " +
+                "           AND dv.difficulty_level = 'medium'), 0) AS medium_count, " +
+                "       COALESCE((SELECT COUNT(*) FROM difficulty_votes dv " +
+                "           WHERE dv.paper_id = p.paper_id " +
+                "           AND dv.difficulty_level = 'hard'), 0) AS hard_count " +
+                "FROM papers p " +
+                "JOIN votes v ON p.paper_id = v.paper_id " +
+                "LEFT JOIN users u ON p.uploaded_by = u.user_id " +
+                "WHERE v.user_id = ? " +
+                "ORDER BY " + markedAtExpression + " DESC";
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+
+                statement.setInt(1, userId);
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.text.SimpleDateFormat formatter =
+                            new java.text.SimpleDateFormat("MMM dd, yyyy");
+
+                    while (resultSet.next()) {
+                        Paper paper = mapRow(resultSet);
+                        paper.setUsefulCount(resultSet.getInt("useful_count"));
+                        paper.setEasyCount(resultSet.getInt("easy_count"));
+                        paper.setMediumCount(resultSet.getInt("medium_count"));
+                        paper.setHardCount(resultSet.getInt("hard_count"));
+                        paper.calculateDifficulty();
+
+                        java.sql.Timestamp markedAt = resultSet.getTimestamp("marked_at");
+                        if (markedAt != null) {
+                            paper.setMarkedAt(formatter.format(markedAt));
+                        }
+
+                        list.add(paper);
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE,
+                    "Database error while fetching marked papers for user ID: " + userId, e);
+            throw new DAOException("Failed to retrieve marked papers.", e);
+        }
+
+        return list;
+    }
+
+    private boolean columnExists(Connection connection, String tableName, String columnName)
+            throws SQLException {
+        String sql =
+                "SELECT 1 FROM information_schema.columns " +
+                "WHERE table_name = ? AND column_name = ?";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, tableName);
+            statement.setString(2, columnName);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
     }
 
     public int getVoteCount(int paperId) {
@@ -333,6 +420,28 @@ public class PaperDAO {
         return papers;
     }
 
+    public List<Paper> getRecentPapers(int limit) {
+        List<Paper> list = new ArrayList<>();
+        String sql = "SELECT p.paper_id, p.subject_name, p.subject_code, p.year, p.chapter, p.file_url, "
+                + "p.uploaded_by, p.created_at, p.exam_type, p.description, u.username "
+                + "FROM papers p "
+                + "LEFT JOIN users u ON p.uploaded_by = u.user_id "
+                + "ORDER BY p.created_at DESC LIMIT ?";
+
+        try (Connection conn = getDataSource().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error while retrieving recent papers.", e);
+        }
+        return list;
+    }
+
     public Paper getPaperById(int paperId) {
         if (paperId <= 0) {
             throw new IllegalArgumentException("Paper ID must be a positive integer.");
@@ -424,9 +533,19 @@ public class PaperDAO {
 
             if (hasReplacementFile) {
                 statement.setString(6, paper.getFileUrl());
-                statement.setInt(7, paper.getPaperId());
+                if (paper.getDescription() != null && !paper.getDescription().isBlank()) {
+                    statement.setString(7, paper.getDescription().trim());
+                } else {
+                    statement.setNull(7, java.sql.Types.VARCHAR);
+                }
+                statement.setInt(8, paper.getPaperId());
             } else {
-                statement.setInt(6, paper.getPaperId());
+                if (paper.getDescription() != null && !paper.getDescription().isBlank()) {
+                    statement.setString(6, paper.getDescription().trim());
+                } else {
+                    statement.setNull(6, java.sql.Types.VARCHAR);
+                }
+                statement.setInt(7, paper.getPaperId());
             }
 
             int rowsAffected = statement.executeUpdate();
@@ -475,6 +594,13 @@ public class PaperDAO {
             paper.setExamType(resultSet.getString("exam_type"));
         } catch (SQLException ignored) {
             // column doesn't exist yet — run add_exam_type_column.sql to fix
+        }
+
+        // description — read safely in case column not yet added to DB
+        try {
+            paper.setDescription(resultSet.getString("description"));
+        } catch (SQLException ignored) {
+            // column doesn't exist yet — run ALTER TABLE papers ADD COLUMN description TEXT
         }
 
         return paper;

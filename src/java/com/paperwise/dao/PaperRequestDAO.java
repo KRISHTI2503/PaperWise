@@ -33,11 +33,18 @@ public class PaperRequestDAO {
             "LEFT JOIN users u ON pr.user_id = u.user_id " +
             "ORDER BY pr.requested_at DESC";
 
-    private static final String SQL_UPDATE_STATUS =
+    private static final String SQL_UPDATE_STATUS_ONLY =
             "UPDATE paper_requests SET status = ? WHERE request_id = ?";
 
+    private static final String SQL_UPDATE_STATUS =
+            "UPDATE paper_requests SET status = ?, admin_message = ?, admin_message_updated_at = CURRENT_TIMESTAMP WHERE request_id = ?";
+
+    private static final String SQL_DELETE_ADMIN_MESSAGE =
+            "UPDATE paper_requests SET admin_message = NULL, admin_message_updated_at = NULL WHERE request_id = ?";
+
     private static final String SQL_FIND_BY_USER =
-            "SELECT request_id, subject_name, subject_code, year, description, status, requested_at " +
+            "SELECT request_id, subject_name, subject_code, year, description, status, requested_at, " +
+            "admin_message, admin_message_updated_at " +
             "FROM paper_requests " +
             "WHERE user_id = ? " +
             "ORDER BY requested_at DESC";
@@ -107,7 +114,6 @@ public class PaperRequestDAO {
 
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Database error while saving paper request.", e);
-            e.printStackTrace();
             throw new DAOException("Failed to save paper request.", e);
         }
 
@@ -132,6 +138,7 @@ public class PaperRequestDAO {
                 request.setStatus(resultSet.getString("status"));
                 request.setCreatedAt(resultSet.getTimestamp("requested_at").toLocalDateTime());
                 request.setRequesterUsername(resultSet.getString("username"));
+                mapAdminMessage(resultSet, request);
                 requests.add(request);
             }
 
@@ -166,6 +173,7 @@ public class PaperRequestDAO {
                     if (ts != null) {
                         req.setCreatedAt(ts.toLocalDateTime());
                     }
+                    mapAdminMessage(resultSet, req);
                     requests.add(req);
                 }
             }
@@ -175,11 +183,57 @@ public class PaperRequestDAO {
 
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Database error while retrieving requests for user ID: " + userId, e);
-            e.printStackTrace();
             throw new DAOException("Failed to retrieve requests for user.", e);
         }
 
         return requests;
+    }
+
+    public boolean updateRequestStatus(int requestId, String status, String adminMessage) {
+        if (requestId <= 0) {
+            throw new IllegalArgumentException("Request ID must be a positive integer.");
+        }
+        if (status == null || status.trim().isEmpty()) {
+            throw new IllegalArgumentException("Status must not be null or empty.");
+        }
+
+        String normalizedStatus = status.trim().toLowerCase();
+        if ("approved".equals(normalizedStatus) || "accepted".equals(normalizedStatus)) {
+            normalizedStatus = "completed";
+        }
+        if (!normalizedStatus.equals("pending") &&
+            !normalizedStatus.equals("rejected") &&
+            !normalizedStatus.equals("completed")) {
+            throw new IllegalArgumentException(
+                    "Invalid status. Must be one of: pending, rejected, completed");
+        }
+
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_STATUS)) {
+
+            statement.setString(1, normalizedStatus);
+            if (adminMessage != null && !adminMessage.trim().isEmpty()) {
+                statement.setString(2, adminMessage.trim());
+            } else {
+                statement.setNull(2, java.sql.Types.VARCHAR);
+            }
+            statement.setInt(3, requestId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                LOGGER.log(Level.INFO, "Updated request {0} status to: {1}",
+                        new Object[]{requestId, normalizedStatus});
+                return true;
+            }
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE,
+                    "Database error while updating request status for ID: " + requestId, e);
+            throw new DAOException("Failed to update request status: " + e.getMessage(), e);
+        }
+
+        return false;
     }
 
     public boolean updateStatus(int requestId, String status) {
@@ -191,16 +245,18 @@ public class PaperRequestDAO {
         }
 
         String normalizedStatus = status.trim().toLowerCase();
+        if ("approved".equals(normalizedStatus) || "accepted".equals(normalizedStatus)) {
+            normalizedStatus = "completed";
+        }
         if (!normalizedStatus.equals("pending") &&
-            !normalizedStatus.equals("approved") &&
             !normalizedStatus.equals("rejected") &&
             !normalizedStatus.equals("completed")) {
             throw new IllegalArgumentException(
-                    "Invalid status. Must be one of: pending, approved, rejected, completed");
+                    "Invalid status. Must be one of: pending, rejected, completed");
         }
 
         try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_STATUS)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_STATUS_ONLY)) {
 
             statement.setString(1, normalizedStatus);
             statement.setInt(2, requestId);
@@ -216,11 +272,45 @@ public class PaperRequestDAO {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE,
                     "Database error while updating request status for ID: " + requestId, e);
-            e.printStackTrace();
             throw new DAOException("Failed to update request status: " + e.getMessage(), e);
         }
 
         return false;
+    }
+
+    public boolean deleteAdminMessage(int requestId) {
+        if (requestId <= 0) {
+            throw new IllegalArgumentException("Request ID must be a positive integer.");
+        }
+
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_DELETE_ADMIN_MESSAGE)) {
+
+            statement.setInt(1, requestId);
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                LOGGER.log(Level.INFO, "Deleted admin message for request {0}.", requestId);
+                return true;
+            }
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE,
+                    "Database error while deleting admin message for ID: " + requestId, e);
+            throw new DAOException("Failed to delete admin message: " + e.getMessage(), e);
+        }
+
+        return false;
+    }
+
+    private void mapAdminMessage(ResultSet rs, PaperRequest req) throws SQLException {
+        req.setAdminMessage(rs.getString("admin_message"));
+        java.sql.Timestamp updatedAt = rs.getTimestamp("admin_message_updated_at");
+        if (updatedAt != null) {
+            java.text.SimpleDateFormat sdf =
+                    new java.text.SimpleDateFormat("MMM dd, yyyy HH:mm");
+            req.setAdminMessageUpdatedAt(sdf.format(updatedAt));
+        }
     }
 
     public boolean deleteRequest(int requestId, int userId) {
@@ -245,7 +335,6 @@ public class PaperRequestDAO {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE,
                     "Database error while deleting request ID: " + requestId, e);
-            e.printStackTrace();
             throw new DAOException("Failed to delete request: " + e.getMessage(), e);
         }
 

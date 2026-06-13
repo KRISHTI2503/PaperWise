@@ -1,6 +1,7 @@
 package com.paperwise.servlet;
 
 import com.paperwise.dao.DifficultyVoteDAO;
+import com.paperwise.model.DifficultyStats;
 import com.paperwise.model.User;
 
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Set;
 
 /**
@@ -31,39 +33,48 @@ public class StudentRateDifficultyServlet extends HttpServlet {
         difficultyVoteDAO = new DifficultyVoteDAO();
     }
 
+    private boolean wantsJson(HttpServletRequest request) {
+        if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+            return true;
+        }
+        String accept = request.getHeader("Accept");
+        return accept != null && accept.contains("application/json");
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Not authenticated");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+            }
             return;
         }
 
-        // Support both "loggedInUser" (User object) and legacy "userId" integer
         User user = (User) session.getAttribute("loggedInUser");
         if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Not authenticated");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+            }
             return;
         }
 
         String paperIdParam = request.getParameter("paperId");
 
-        // Accept "difficulty" OR "vote" — whichever the form/JS sends
         String level = request.getParameter("difficulty");
         if (level == null || level.trim().isEmpty()) {
             level = request.getParameter("vote");
         }
 
-        boolean isAjax = "application/x-www-form-urlencoded".equals(request.getContentType())
-                && request.getHeader("Accept") != null
-                && request.getHeader("Accept").contains("application/json");
-
         if (paperIdParam == null || paperIdParam.trim().isEmpty() || level == null) {
-            if (isAjax) {
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().print("{\"success\":false,\"error\":\"Missing parameters\"}");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Missing parameters");
             } else {
                 response.sendRedirect(request.getContextPath() + "/studentDashboard");
             }
@@ -72,9 +83,8 @@ public class StudentRateDifficultyServlet extends HttpServlet {
 
         String normalizedLevel = level.trim().toLowerCase();
         if (!VALID_LEVELS.contains(normalizedLevel)) {
-            if (isAjax) {
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().print("{\"success\":false,\"error\":\"Invalid difficulty level\"}");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Invalid difficulty level");
             } else {
                 response.sendRedirect(request.getContextPath() + "/studentDashboard");
             }
@@ -85,14 +95,54 @@ public class StudentRateDifficultyServlet extends HttpServlet {
             int paperId = Integer.parseInt(paperIdParam.trim());
             difficultyVoteDAO.addOrUpdateDifficultyVote(paperId, user.getUserId(), normalizedLevel);
 
-            // Always redirect — works for both form POST and fetch (fetch follows redirect)
-            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            if (wantsJson(request)) {
+                DifficultyStats stats = difficultyVoteDAO.getDifficultyStatsObject(paperId);
+                String userVote = difficultyVoteDAO.getUserDifficultyVote(paperId, user.getUserId());
+                if (userVote == null) {
+                    userVote = normalizedLevel;
+                }
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                PrintWriter out = response.getWriter();
+                out.print("{\"success\":true,\"easy\":" + stats.getEasyCount()
+                        + ",\"medium\":" + stats.getMediumCount()
+                        + ",\"hard\":" + stats.getHardCount()
+                        + ",\"userVote\":\"" + userVote + "\"}");
+                out.flush();
+                return;
+            }
+
+            String referer = request.getHeader("Referer");
+            String contextPath = request.getContextPath();
+            String redirectTo;
+            if (referer != null && referer.contains("studentAllPapers")) {
+                redirectTo = contextPath + "/studentAllPapers?voted=true";
+            } else {
+                redirectTo = contextPath + "/studentDashboard?voted=true";
+            }
+            response.sendRedirect(redirectTo);
 
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Invalid paperId");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            if (wantsJson(request)) {
+                sendJsonError(response, "Server error");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/studentDashboard");
+            }
         }
+    }
+
+    private void sendJsonError(HttpServletResponse response, String message) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        PrintWriter out = response.getWriter();
+        out.print("{\"success\":false,\"error\":\"" + message.replace("\"", "\\\"") + "\"}");
+        out.flush();
     }
 }

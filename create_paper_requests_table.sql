@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS paper_requests (
     subject_code VARCHAR(50) NOT NULL,
     year INT NOT NULL,
     description TEXT,
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'rejected', 'completed')),
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Foreign key to users table
@@ -24,7 +24,7 @@ CREATE INDEX idx_paper_requests_user_id ON paper_requests(user_id);
 -- Add comments
 COMMENT ON TABLE paper_requests IS 'Stores student requests for papers they need';
 COMMENT ON COLUMN paper_requests.user_id IS 'ID of the user who requested the paper';
-COMMENT ON COLUMN paper_requests.status IS 'Request status: pending, approved, rejected, or completed';
+COMMENT ON COLUMN paper_requests.status IS 'Request status: pending, rejected, or completed';
 COMMENT ON COLUMN paper_requests.year IS 'Year of the paper (validated: currentYear-20 to currentYear)';
 COMMENT ON COLUMN paper_requests.description IS 'Additional details about the paper request';
 COMMENT ON COLUMN paper_requests.requested_at IS 'Timestamp when the request was created (auto-set by database)';

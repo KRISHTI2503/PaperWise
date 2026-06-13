@@ -11,8 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DifficultyVoteDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(DifficultyVoteDAO.class.getName());
 
     private static final String JNDI_DATASOURCE = "java:comp/env/jdbc/paperwise";
 
@@ -39,8 +43,7 @@ public class DifficultyVoteDAO {
                 Context initContext = new InitialContext();
                 dataSource = (DataSource) initContext.lookup(JNDI_DATASOURCE);
             } catch (NamingException e) {
-                System.err.println("JNDI lookup failed for resource: " + JNDI_DATASOURCE);
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "JNDI lookup failed for resource: {0}", JNDI_DATASOURCE);
                 throw new DAOException(
                         "Unable to locate DataSource via JNDI. " +
                         "Verify that '" + JNDI_DATASOURCE + "' is declared in context.xml.", e);
@@ -64,7 +67,7 @@ public class DifficultyVoteDAO {
                     "Invalid difficulty level '" + normalizedLevel + "'. Must be: easy, medium, or hard");
         }
 
-        System.out.println("[DAO] UPSERT difficulty_votes: paperId=" + paperId
+        LOGGER.log(Level.FINE, "[DAO] UPSERT difficulty_votes: paperId={0}", paperId
                 + " userId=" + userId + " level=" + normalizedLevel);
 
         try (Connection connection = getDataSource().getConnection();
@@ -75,13 +78,12 @@ public class DifficultyVoteDAO {
             statement.setString(3, normalizedLevel);
 
             int rowsAffected = statement.executeUpdate();
-            System.out.println("[DAO] Rows affected: " + rowsAffected);
+            LOGGER.log(Level.FINE, "[DAO] Rows affected: {0}", rowsAffected);
 
         } catch (SQLException e) {
-            System.err.println("[DAO] SQL ERROR: " + e.getMessage());
-            System.err.println("[DAO] SQLState: " + e.getSQLState());
-            System.err.println("[DAO] ErrorCode: " + e.getErrorCode());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "[DAO] SQL ERROR: {0}", e.getMessage());
+            LOGGER.log(Level.SEVERE, "[DAO] SQLState: {0}", e.getSQLState());
+            LOGGER.log(Level.SEVERE, "[DAO] ErrorCode: {0}", e.getErrorCode());
             throw new DAOException("Failed to add or update difficulty vote.", e);
         }
     }
@@ -108,8 +110,7 @@ public class DifficultyVoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting difficulty stats for paper ID: " + paperId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while getting difficulty stats for paper ID: {0}", paperId);
             throw new DAOException("Failed to retrieve difficulty statistics.", e);
         }
 
@@ -144,14 +145,13 @@ public class DifficultyVoteDAO {
                             stats.setHardCount(count);
                             break;
                         default:
-                            System.err.println("Unknown difficulty level: " + level);
+                            LOGGER.log(Level.SEVERE, "Unknown difficulty level: {0}", level);
                     }
                 }
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting difficulty stats for paper ID: " + paperId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while getting difficulty stats for paper ID: {0}", paperId);
             throw new DAOException("Failed to retrieve difficulty statistics.", e);
         }
 
@@ -176,9 +176,8 @@ public class DifficultyVoteDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Database error while getting user difficulty vote for paper ID: " +
-                               paperId + ", user ID: " + userId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error while getting user difficulty vote for paper ID: {0}, user ID: {1}",
+                    new Object[]{paperId, userId});
             throw new DAOException("Failed to retrieve user difficulty vote.", e);
         }
 

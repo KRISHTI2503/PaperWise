@@ -11,11 +11,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/markUseful")
 public class MarkUsefulServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(MarkUsefulServlet.class.getName());
 
     private VoteDAO voteDAO;
 
@@ -24,8 +27,7 @@ public class MarkUsefulServlet extends HttpServlet {
         try {
             voteDAO = new VoteDAO();
         } catch (Exception e) {
-            System.err.println("Failed to initialise VoteDAO in MarkUsefulServlet.");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to initialise VoteDAO in MarkUsefulServlet.");
             throw new ServletException("MarkUsefulServlet initialisation failed.", e);
         }
     }
@@ -35,8 +37,9 @@ public class MarkUsefulServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        String contextPath = request.getContextPath();
         if (session == null) {
-            response.sendRedirect("login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
@@ -46,21 +49,15 @@ public class MarkUsefulServlet extends HttpServlet {
         }
 
         if (user == null) {
-            response.sendRedirect("login.jsp");
+            response.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
         String paperIdParam = request.getParameter("paperId");
+        String dashboard = contextPath + "/studentDashboard";
 
-        if (paperIdParam == null) {
-            session.setAttribute("msg", "Error: No paper ID provided.");
-            response.sendRedirect("studentDashboard");
-            return;
-        }
-
-        if (paperIdParam.trim().isEmpty()) {
-            session.setAttribute("msg", "Error: Invalid paper ID.");
-            response.sendRedirect("studentDashboard");
+        if (paperIdParam == null || paperIdParam.trim().isEmpty()) {
+            response.sendRedirect(dashboard + "?error=true");
             return;
         }
 
@@ -68,15 +65,8 @@ public class MarkUsefulServlet extends HttpServlet {
             int paperId = Integer.parseInt(paperIdParam.trim());
             int userId = user.getUserId();
 
-            if (paperId <= 0) {
-                session.setAttribute("msg", "Error: Invalid paper ID.");
-                response.sendRedirect("studentDashboard");
-                return;
-            }
-
-            if (userId <= 0) {
-                session.setAttribute("msg", "Error: Invalid user ID.");
-                response.sendRedirect("studentDashboard");
+            if (paperId <= 0 || userId <= 0) {
+                response.sendRedirect(dashboard + "?error=true");
                 return;
             }
 
@@ -84,17 +74,18 @@ public class MarkUsefulServlet extends HttpServlet {
 
             if (!alreadyMarked) {
                 voteDAO.addMark(paperId, userId);
-                session.setAttribute("msg", "Marked as useful.");
-            } else {
-                session.setAttribute("msg", "You already marked this paper.");
+                response.sendRedirect(dashboard + "?marked=true");
+                return;
             }
 
         } catch (NumberFormatException e) {
-            session.setAttribute("msg", "Error: Invalid paper ID format.");
+            response.sendRedirect(dashboard + "?error=true");
+            return;
         } catch (Exception e) {
-            session.setAttribute("msg", "An error occurred. Please try again.");
+            response.sendRedirect(dashboard + "?error=true");
+            return;
         }
 
-        response.sendRedirect("studentDashboard");
+        response.sendRedirect(dashboard);
     }
 }

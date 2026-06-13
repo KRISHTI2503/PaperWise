@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,6 +64,33 @@ public class RegisterServlet extends HttpServlet {
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
 
+        if (email.isEmpty()) {
+            forwardWithError(request, response, "Email is required.");
+            return;
+        }
+
+        String emailRegex = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
+        if (!email.matches(emailRegex)) {
+            forwardWithError(request, response,
+                    "Please enter a valid email address (e.g. user@gmail.com)");
+            return;
+        }
+
+        String[] emailParts = email.split("@");
+        if (emailParts.length != 2) {
+            forwardWithError(request, response, "Invalid email format.");
+            return;
+        }
+        String domain = emailParts[1];
+        String[] domainParts = domain.split("\\.");
+        if (domainParts.length < 2
+                || domainParts[domainParts.length - 1].length() < 2
+                || domainParts[domainParts.length - 2].length() < 2) {
+            forwardWithError(request, response,
+                    "Please enter a valid email domain (e.g. gmail.com, yahoo.in)");
+            return;
+        }
+
         String validationError = validateInput(username, email, password, confirmPassword);
         if (validationError != null) {
             forwardWithError(request, response, validationError);
@@ -89,8 +118,7 @@ public class RegisterServlet extends HttpServlet {
                         new Object[]{username, email});
 
                 String contextPath = request.getContextPath();
-                response.sendRedirect(contextPath + VIEW_LOGIN + "?" + PARAM_SUCCESS +
-                        "=Account created successfully! Please login.");
+                response.sendRedirect(contextPath + VIEW_LOGIN + "?registered=true");
             } else {
                 forwardWithError(request, response,
                         "Registration failed. Please try again.");
@@ -169,18 +197,35 @@ public class RegisterServlet extends HttpServlet {
     }
 
     private boolean isValidEmail(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-        return email.matches(emailRegex);
+        String emailRegex = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
+        if (!email.matches(emailRegex)) {
+            return false;
+        }
+        String[] emailParts = email.split("@");
+        if (emailParts.length != 2) {
+            return false;
+        }
+        String[] domainParts = emailParts[1].split("\\.");
+        if (domainParts.length < 2) {
+            return false;
+        }
+        for (String part : domainParts) {
+            if (part.isEmpty()) {
+                return false;
+            }
+        }
+        return domainParts[domainParts.length - 1].length() >= 2
+                && domainParts[domainParts.length - 2].length() >= 2;
     }
 
     private void forwardWithError(HttpServletRequest request,
                                   HttpServletResponse response,
                                   String message)
-            throws ServletException, IOException {
+            throws IOException {
 
-        request.setAttribute(ATTR_ERROR, message);
-        RequestDispatcher dispatcher = request.getRequestDispatcher(VIEW_REGISTER);
-        dispatcher.forward(request, response);
+        String encoded = URLEncoder.encode(message, StandardCharsets.UTF_8);
+        response.sendRedirect(request.getContextPath() + VIEW_REGISTER
+                + "?msg=" + encoded + "&msgType=error");
     }
 
     private String sanitise(String value) {

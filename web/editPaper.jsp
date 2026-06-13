@@ -8,8 +8,6 @@
     String existingChapter  = (paper != null && paper.getChapter()  != null) ? paper.getChapter()  : "";
     String existingExamType = (paper != null && paper.getExamType() != null) ? paper.getExamType() : "";
 
-    String errorMsg   = (String) session.getAttribute("errorMessage");
-    if (errorMsg   != null) session.removeAttribute("errorMessage");
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,14 +15,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Paper - PaperWise</title>
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/tabler-icons/css/tabler-icons.min.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/fontawesome/css/all.min.css">
+    <script>
+        (function(){var t=localStorage.getItem('pw-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();
+    </script>
+    <script src="${pageContext.request.contextPath}/js/paperwise.js" defer></script>
     <style>
+        :root {
+            --bg-body: #0d1b2a;
+            --bg-card: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #718096;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --border-faint: #f7f8fa;
+            --input-bg: #f9fafb;
+            --input-focus-bg: #ffffff;
+            --btn-cancel-bg: #f3f4f6;
+            --btn-cancel-hover: #e5e7eb;
+            --bg-sidebar: #0f2744;
+            --text-white: #ffffff;
+            --chip-bg: #dbeafe;
+            --chip-text: #1e40af;
+        }
+        :root[data-theme="dark"] {
+            --bg-body: #080f1a;
+            --bg-card: #152238;
+            --text-primary: #f3f4f6;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
+            --border-faint: #1e293b;
+            --input-bg: #1e293b;
+            --input-focus-bg: #0f172a;
+            --btn-cancel-bg: #1e293b;
+            --btn-cancel-hover: #334155;
+            --bg-sidebar: #0b1120;
+            --text-white: #ffffff;
+            --chip-bg: #1e293b;
+            --chip-text: #38bdf8;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             min-height: 100vh;
-            background: #0d1b2a;
+            background: var(--bg-body);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -32,16 +69,18 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             position: relative;
             overflow-x: hidden;
+            transition: background 0.3s;
         }
 
         .pw-card {
-            background: #fff;
+            background: var(--bg-card);
             border-radius: 20px;
             width: 100%;
             max-width: 620px;
             padding: 2.2rem 2.5rem;
             position: relative;
             animation: slideUp .4s cubic-bezier(.16,1,.3,1) both;
+            transition: background 0.3s;
         }
 
         @keyframes slideUp {
@@ -52,13 +91,13 @@
         .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 
         .logo-box {
-            width: 40px; height: 40px; background: #0f2744;
+            width: 40px; height: 40px; background: var(--bg-sidebar);
             border-radius: 10px; display: flex; align-items: center;
             justify-content: center; flex-shrink: 0;
         }
 
-        .card-title { font-size: 20px; font-weight: 700; color: #0f2744; }
-        .card-sub   { font-size: 13px; color: #8a97a8; margin-bottom: 1.3rem; }
+        .card-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .card-sub   { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.3rem; }
 
         .info-bar {
             background: #eef6ff; border-left: 3px solid #3b82f6;
@@ -84,30 +123,30 @@
         .fg.full { grid-column: 1 / -1; }
 
         label {
-            font-size: 12.5px; font-weight: 600; color: #374151;
+            font-size: 12.5px; font-weight: 600; color: var(--text-primary);
             display: flex; align-items: center; gap: 5px;
         }
         .req { color: #ef4444; }
         .opt-badge {
-            font-size: 11px; color: #9ca3af; font-weight: 400;
-            background: #f3f4f6; border-radius: 4px; padding: 1px 6px;
+            font-size: 11px; color: var(--text-muted); font-weight: 400;
+            background: var(--border-color); border-radius: 4px; padding: 1px 6px;
         }
 
         .iw { position: relative; display: flex; align-items: center; }
         .iw .fi {
             position: absolute; left: 11px; font-size: 16px;
-            color: #9ca3af; pointer-events: none; z-index: 1;
+            color: var(--text-muted); pointer-events: none; z-index: 1;
         }
         .iw input, .iw select { padding-left: 36px; }
 
         input, select {
-            width: 100%; border: 1.5px solid #e5e7eb; border-radius: 9px;
-            padding: 9px 11px; font-size: 13.5px; color: #111827;
-            background: #f9fafb; font-family: inherit; outline: none;
+            width: 100%; border: 1.5px solid var(--border-color); border-radius: 9px;
+            padding: 9px 11px; font-size: 13.5px; color: var(--text-primary);
+            background: var(--input-bg); font-family: inherit; outline: none;
             transition: border .18s, box-shadow .18s, background .18s;
         }
         input:focus, select:focus {
-            border-color: #3b82f6; background: #fff;
+            border-color: #3b82f6; background: var(--input-focus-bg);
             box-shadow: 0 0 0 3px rgba(59,130,246,.12);
         }
         select { appearance: none; cursor: pointer; padding-right: 32px; }
@@ -115,43 +154,43 @@
         .sw::after {
             content: ''; position: absolute; right: 11px; top: 50%;
             transform: translateY(-50%); border: 5px solid transparent;
-            border-top-color: #9ca3af; pointer-events: none; margin-top: 3px;
+            border-top-color: var(--text-muted); pointer-events: none; margin-top: 3px;
         }
 
-        .hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
         .tags-box {
             display: flex; flex-wrap: wrap; gap: 5px;
-            border: 1.5px solid #e5e7eb; border-radius: 9px;
-            padding: 7px 9px; background: #f9fafb;
+            border: 1.5px solid var(--border-color); border-radius: 9px;
+            padding: 7px 9px; background: var(--input-bg);
             min-height: 42px; align-items: center; cursor: text;
             transition: border .18s, box-shadow .18s;
         }
         .tags-box:focus-within {
-            border-color: #3b82f6; background: #fff;
+            border-color: #3b82f6; background: var(--input-focus-bg);
             box-shadow: 0 0 0 3px rgba(59,130,246,.12);
         }
         .chip {
-            background: #dbeafe; color: #1e40af; font-size: 12px;
+            background: var(--chip-bg); color: var(--chip-text); font-size: 12px;
             font-weight: 500; border-radius: 5px; padding: 2px 7px;
             display: flex; align-items: center; gap: 4px;
         }
         .chip button {
-            background: none; border: none; color: #3b82f6;
+            background: none; border: none; color: var(--chip-text);
             cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
         }
         .tag-f {
             border: none; background: transparent; outline: none;
-            font-size: 13px; font-family: inherit; color: #111827;
+            font-size: 13px; font-family: inherit; color: var(--text-primary);
             min-width: 80px; flex: 1; padding: 2px;
         }
 
-        hr.pw-div { border: none; border-top: 1px solid #f0f0f0; margin: 1.3rem 0; }
+        hr.pw-div { border: none; border-top: 1px solid var(--border-color); margin: 1.3rem 0; }
 
         .actions { display: flex; gap: 10px; }
 
         .btn-update {
-            flex: 1; background: #0f2744; color: #fff; border: none;
+            flex: 1; background: var(--bg-sidebar); color: var(--text-white); border: none;
             border-radius: 10px; padding: 11px; font-size: 14px;
             font-weight: 600; font-family: inherit; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
@@ -162,14 +201,14 @@
         .btn-update i { font-size: 17px; }
 
         .btn-cancel {
-            background: #f3f4f6; color: #374151;
-            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            background: var(--btn-cancel-bg); color: var(--text-primary);
+            border: 1.5px solid var(--border-color); border-radius: 10px;
             padding: 11px 20px; font-size: 13.5px; font-weight: 500;
             font-family: inherit; cursor: pointer;
             display: flex; align-items: center; gap: 6px;
             transition: background .18s; text-decoration: none;
         }
-        .btn-cancel:hover { background: #e5e7eb; }
+        .btn-cancel:hover { background: var(--btn-cancel-hover); }
         .btn-cancel i { font-size: 16px; }
 
         .pw-toast {
@@ -182,9 +221,79 @@
         }
         .pw-toast i { font-size: 16px; }
         .pw-toast.show { opacity: 1; transform: translateY(0); }
-    </style>
+
+        @media (max-width: 500px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+.pw-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.pw-toast {
+  background: #0f2744;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  max-width: 380px;
+  box-shadow: 0 8px 24px rgba(15,39,68,0.18);
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  pointer-events: auto;
+}
+
+.pw-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pw-toast.success .pw-toast-icon { color: #4ade80; }
+.pw-toast.error .pw-toast-icon   { color: #f87171; }
+.pw-toast.info .pw-toast-icon    { color: #60a5fa; }
+.pw-toast.warning .pw-toast-icon { color: #fbbf24; }
+
+.pw-toast-icon { font-size: 18px; flex-shrink: 0; }
+.pw-toast-msg  { flex: 1; line-height: 1.4; }
+.pw-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.pw-toast-close:hover { color: #fff; }
+</style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/ui-consistency.css">
 </head>
 <body>
+
+    <!-- Theme Toggle — fixed top-right corner -->
+    <button id="pwDarkToggle" title="Toggle dark mode" aria-label="Toggle dark/light mode"
+        style="position: fixed; top: 16px; right: 20px; z-index: 9999; background: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: background 0.3s, color 0.3s;">
+        <i class="fa-solid fa-moon" style="font-size:14px"></i>
+    </button>
 
     <!-- Watermark SVGs -->
     <svg style="position:absolute;top:20px;left:30px;width:70px;height:80px;transform:rotate(-15deg);opacity:0.05;pointer-events:none"
@@ -225,10 +334,6 @@
          data-updated="<%= "true".equals(request.getParameter("updated")) ? "true" : "false" %>">
 
         <!-- Toast -->
-        <div class="pw-toast" id="pwToast">
-            <i class="ti ti-circle-check"></i> Paper updated successfully!
-        </div>
-
         <!-- HEADER -->
         <div class="card-top">
             <div class="logo-box">
@@ -244,14 +349,6 @@
         </div>
 
         <div class="card-sub">Update paper metadata — the uploaded file cannot be changed.</div>
-
-        <!-- ERROR BANNER -->
-        <% if (errorMsg != null) { %>
-        <div class="err-bar">
-            <i class="ti ti-alert-circle"></i>
-            <span><%= errorMsg %></span>
-        </div>
-        <% } %>
 
         <!-- INFO BANNER -->
         <div class="info-bar">
@@ -336,6 +433,21 @@
                     <span class="hint">Press Enter or comma to add a chapter tag</span>
                 </div>
 
+                <!-- Description field -->
+                <div class="fg full">
+                    <label>Description <span class="opt-badge">optional</span></label>
+                    <div class="iw" style="align-items:flex-start">
+                        <i class="ti ti-notes fi" style="position:absolute;left:11px;top:11px;font-size:16px;color:#9ca3af;z-index:1"></i>
+                        <textarea name="description"
+                                  placeholder="Describe what this paper covers, which exam it is from, any notes for students..."
+                                  style="padding:9px 11px 9px 36px;min-height:80px;resize:vertical;width:100%;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13.5px;color:#111827;background:#f9fafb;font-family:inherit;outline:none;transition:border .18s,box-shadow .18s,background .18s;"
+                                  onfocus="this.style.borderColor='#3b82f6';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
+                                  onblur="this.style.borderColor='';this.style.background='';this.style.boxShadow=''"
+                                  maxlength="1000"><%= paper != null && paper.getDescription() != null ? paper.getDescription() : "" %></textarea>
+                    </div>
+                    <span class="hint">Students will see this when browsing papers</span>
+                </div>
+
             </div><!-- end form-grid -->
 
             <hr class="pw-div">
@@ -358,17 +470,6 @@
     (function () {
 
         var card = document.querySelector('.pw-card');
-
-        // ── TOAST on ?updated=true ──────────────────────────────
-        if (card.dataset.updated === 'true') {
-            var toast = document.getElementById('pwToast');
-            toast.classList.add('show');
-            setTimeout(function () { toast.classList.remove('show'); }, 3000);
-            // Clean URL so refresh doesn't re-show toast
-            if (window.history.replaceState) {
-                window.history.replaceState(null, '', window.location.pathname);
-            }
-        }
 
         // ── CHAPTER TAGS ────────────────────────────────────────
         var box     = document.getElementById('tagsBox');
@@ -444,6 +545,80 @@
 
     })();
     </script>
+
+
+<div class="pw-toast-container" id="pwToastContainer"></div>
+<script>
+function showToast(message, type, duration) {
+  type = type || 'success';
+  duration = duration || 4000;
+
+  const container = document.getElementById('pwToastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'pw-toast ' + type;
+
+  const icons = {
+    success: 'ti-circle-check',
+    error:   'ti-circle-x',
+    info:    'ti-info-circle',
+    warning: 'ti-alert-triangle'
+  };
+
+  toast.innerHTML =
+    '<i class="ti ' + icons[type] + ' pw-toast-icon"></i>' +
+    '<span class="pw-toast-msg">' + message + '</span>' +
+    '<button type="button" class="pw-toast-close" onclick="this.closest(\'.pw-toast\').remove()">' +
+    '<i class="ti ti-x"></i></button>';
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, duration);
+}
+
+window.addEventListener('load', function() {
+  const p = new URLSearchParams(window.location.search);
+
+  const messages = {
+    'uploaded':        ['Paper uploaded successfully!',    'success'],
+    'updated':         ['Paper updated successfully!',     'success'],
+    'deleted':         ['Paper deleted successfully!',     'success'],
+    'marked':          ['Marked as useful!',               'success'],
+    'unmarked':        ['Removed from useful marks.',      'info'],
+    'voted':           ['Difficulty vote saved!',          'success'],
+    'rated':           ['Difficulty vote saved!',          'success'],
+    'commented':       ['Comment posted!',                 'success'],
+    'comment_deleted': ['Comment deleted.',                'info'],
+    'submitted':       ['Request submitted successfully!', 'success'],
+    'request_deleted': ['Request deleted.',                'info'],
+    'status_updated':  ['Status updated successfully!',    'success'],
+    'logged_out':      ['You have been logged out.',       'info'],
+    'registered':      ['Account created! Please log in.', 'success'],
+    'error':           ['Something went wrong. Try again.', 'error'],
+    'unauthorized':    ['Please log in to continue.',      'warning'],
+    'invalid':         ['Invalid input. Please check your fields.', 'warning'],
+  };
+
+  for (const [param, [msg, type]] of Object.entries(messages)) {
+    if (p.get(param) === 'true' || p.get(param) === '1') {
+      showToast(msg, type);
+      break;
+    }
+  }
+
+  const customMsg = p.get('msg');
+  const customType = p.get('msgType') || 'info';
+  if (customMsg) {
+    showToast(decodeURIComponent(customMsg), customType);
+  }
+});
+</script>
 
 </body>
 </html>

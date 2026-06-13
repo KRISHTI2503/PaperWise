@@ -23,6 +23,8 @@ public class Paper {
     private int hardCount;
     private String difficultyLabel;
     private String examType;
+    private String description;
+    private String markedAt;
 
     public Paper() {}
 
@@ -182,6 +184,22 @@ public class Paper {
 
     public void setExamType(String examType) {
         this.examType = examType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getMarkedAt() {
+        return markedAt;
+    }
+
+    public void setMarkedAt(String markedAt) {
+        this.markedAt = markedAt;
     }
 
     public void calculateDifficulty() {

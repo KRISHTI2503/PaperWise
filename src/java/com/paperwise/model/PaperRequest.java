@@ -14,6 +14,8 @@ public class PaperRequest {
     private LocalDateTime createdAt;
     private String status;
     private String requesterUsername;
+    private String adminMessage;
+    private String adminMessageUpdatedAt;
 
     public PaperRequest() {}
 
@@ -95,6 +97,22 @@ public class PaperRequest {
 
     public void setRequesterUsername(String requesterUsername) {
         this.requesterUsername = requesterUsername;
+    }
+
+    public String getAdminMessage() {
+        return adminMessage;
+    }
+
+    public void setAdminMessage(String adminMessage) {
+        this.adminMessage = adminMessage;
+    }
+
+    public String getAdminMessageUpdatedAt() {
+        return adminMessageUpdatedAt;
+    }
+
+    public void setAdminMessageUpdatedAt(String adminMessageUpdatedAt) {
+        this.adminMessageUpdatedAt = adminMessageUpdatedAt;
     }
 
     @Override
