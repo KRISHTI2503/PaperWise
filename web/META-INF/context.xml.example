@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Example context.xml for LOCAL DEVELOPMENT ONLY
+  
+  For local development:
+  1. Copy this file to context.xml.local
+  2. Replace the placeholder values with your local PostgreSQL credentials
+  3. Set environment variables or use Tomcat's setenv.sh/setenv.bat
+  
+  For production (Render):
+  Environment variables are automatically provided by Render
+-->
+<Context path="/">
+    
+    <!-- Local PostgreSQL Database -->
+    <Resource name="jdbc/paperwise"
+              auth="Container"
+              type="javax.sql.DataSource"
+              driverClassName="org.postgresql.Driver"
+              url="jdbc:postgresql://localhost:5432/paperwise?characterEncoding=UTF-8&amp;useUnicode=true"
+              username="postgres"
+              password="YOUR_LOCAL_PASSWORD"
+              maxTotal="5"
+              maxIdle="2"
+              maxWaitMillis="10000"
+              removeAbandonedOnBorrow="true"
+              removeAbandonedTimeout="60"
+              logAbandoned="true"
+              testOnBorrow="true"
+              validationQuery="SELECT 1"/>
+    
+    <!-- Supabase Storage (optional for local development) -->
+    <Environment name="supabase/url"
+                 type="java.lang.String"
+                 value="https://your-project.supabase.co"
+                 override="false"/>
+    
+    <Environment name="supabase/key"
+                 type="java.lang.String"
+                 value="your-supabase-anon-key"
+                 override="false"/>
+    
+    <Environment name="supabase/bucket"
+                 type="java.lang.String"
+                 value="paperwise-uploads"
+                 override="false"/>
+    
+</Context>

@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: paperwise
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Database Configuration (Neon Postgres)
+      # Set these in Render Dashboard as secret environment variables
+      - key: JDBC_URL
+        sync: false
+      - key: JDBC_USERNAME
+        sync: false
+      - key: JDBC_PASSWORD
+        sync: false
+      
+      # Supabase Storage Configuration
+      # Set these in Render Dashboard as secret environment variables
+      # IMPORTANT: Use service_role key (server-side), NOT anon key
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: paperwise-files
+      
+      # Application Environment
+      - key: APP_ENV
+        value: production

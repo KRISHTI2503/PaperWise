@@ -1,0 +1,106 @@
+/* ==========================================================================
+   RESPONSIVE LAYOUT MODULE (responsive.css)
+   Defines breakpoints and adjusts layout wrappers for mobile and tablet displays.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   TABLET BREAKPOINT (< 960px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 960px) {
+    /* Stack two-column layouts vertically */
+    .two-col, .two-column {
+        grid-template-columns: 1fr;
+    }
+
+    /* Convert 3-column stats into 2-columns */
+    .stats-grid, .stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE BREAKPOINT (< 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* Hide the sidebar off-screen by default */
+    .sidebar, .sb {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+        box-shadow: var(--shadow-xl);
+    }
+
+    /* JavaScript toggles this class to slide the sidebar in */
+    .sidebar.open, .sb.open {
+        transform: translateX(0);
+    }
+
+    /* Display hamburger toggle in topbar */
+    .menu-toggle {
+        display: block;
+    }
+
+    /* Adjust main content positioning */
+    .main {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    /* Expand padding on main content */
+    .content {
+        padding: 16px;
+    }
+
+    /* Adjust topbar padding */
+    .topbar {
+        padding: 0 16px;
+    }
+
+    /* Simplify form grid structures to 1 column */
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Buttons inside actions row stack vertically */
+    .actions, .button-group {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    /* Adjust cards padding */
+    .pw-card, .login-card {
+        padding: 1.4rem 1.2rem;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   SMALL MOBILE BREAKPOINT (< 480px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    /* Stats row goes single-column */
+    .stats-grid, .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* Adjust text headers */
+    .tb-left h1 {
+        font-size: 15px;
+    }
+
+    .tb-left p {
+        font-size: 11.5px;
+    }
+
+    .date-chip, .pill-date {
+        display: none; /* Hide date on very narrow viewports to save topbar space */
+    }
+}

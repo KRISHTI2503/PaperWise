@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/">
+    
+    <!-- Database connection - reads from environment variables -->
+    <!-- For Neon Postgres on Render, use DATABASE_URL -->
+    <!-- For local development, set JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD -->
+    <Resource name="jdbc/paperwise"
+              auth="Container"
+              type="javax.sql.DataSource"
+              driverClassName="org.postgresql.Driver"
+              url="${JDBC_URL}"
+              username="${JDBC_USERNAME}"
+              password="${JDBC_PASSWORD}"
+              maxTotal="5"
+              maxIdle="2"
+              maxWaitMillis="10000"
+              removeAbandonedOnBorrow="true"
+              removeAbandonedTimeout="60"
+              logAbandoned="true"
+              testOnBorrow="true"
+              validationQuery="SELECT 1"/>
+    
+    <!-- Supabase Storage configuration -->
+    <Environment name="supabase/url"
+                 type="java.lang.String"
+                 value="${SUPABASE_URL}"
+                 override="false"/>
+    
+    <Environment name="supabase/key"
+                 type="java.lang.String"
+                 value="${SUPABASE_KEY}"
+                 override="false"/>
+    
+    <Environment name="supabase/bucket"
+                 type="java.lang.String"
+                 value="${SUPABASE_BUCKET}"
+                 override="false"/>
+    
+    <!-- Application environment (local or production) -->
+    <Environment name="app/env"
+                 type="java.lang.String"
+                 value="${APP_ENV}"
+                 override="false"/>
+    
+</Context>

@@ -1,0 +1,137 @@
+<%-- 
+    Shared topbar actions: date pill, theme toggle, and notification bell
+    Used by all admin and student pages for consistent UI
+--%>
+<%
+    // Determine if this is an admin or student page
+    String currentPath = request.getRequestURI();
+    boolean isAdminPage = currentPath.contains("admin") || 
+                         currentPath.contains("allPapers") || 
+                         currentPath.contains("analytics") ||
+                         currentPath.contains("announcements.jsp") ||
+                         currentPath.contains("examSchedule.jsp") ||
+                         currentPath.contains("students.jsp") ||
+                         currentPath.contains("upload.jsp");
+    
+    // Get notification counts - handle both Integer and Long types
+    Object unreadCountObj = request.getAttribute("unreadCount");
+    Object pendingCountObj = request.getAttribute("pendingCount");
+    
+    int notificationCount = 0;
+    String bellClickAction = "toggleNotifDropdown(event)";
+    
+    if (unreadCountObj != null) {
+        if (unreadCountObj instanceof Integer) {
+            notificationCount = (Integer) unreadCountObj;
+        } else if (unreadCountObj instanceof Long) {
+            notificationCount = ((Long) unreadCountObj).intValue();
+        }
+    }
+%>
+
+<style>
+    /* ── SHARED TOPBAR ACTIONS STYLES ── */
+    .date-chip {
+        display: flex; align-items: center; gap: 6px;
+        background: #f3f4f6;
+        border-radius: 7px;
+        padding: 6px 11px;
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+    .date-chip i { font-size: 15px; color: #f59e0b; margin: 0; }
+    [data-theme="dark"] .date-chip {
+        background: #1e293b;
+        color: #94a3b8;
+        border: 1px solid #334155;
+    }
+    [data-theme="dark"] .date-chip i { color: #fbbf24; }
+    
+    .pw-dark-toggle {
+        position: relative;
+        width: 34px; height: 34px;
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: background 0.3s, color 0.3s;
+    }
+    .pw-dark-toggle:hover {
+        background: var(--border-color);
+        color: var(--text-primary);
+    }
+    .pw-dark-toggle i { font-size: 14px; margin: 0; }
+    
+    .bell-btn {
+        position: relative;
+        width: 34px; height: 34px;
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: background 0.3s, color 0.3s;
+    }
+    .bell-btn:hover {
+        background: var(--border-color);
+        color: var(--text-primary);
+    }
+    .bell-btn i { font-size: 14px; margin: 0; }
+    
+    /* Admin pages: badge with count (same as student) */
+    .notif-dot {
+        position: absolute;
+        top: 5px; right: 5px;
+        min-width: 16px; height: 16px;
+        background: #e53e3e;
+        border-radius: 50%;
+        border: 2px solid var(--bg-card);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 9px; color: #fff; font-weight: 700;
+        padding: 0 3px;
+    }
+</style>
+
+<div class="date-chip">
+    <i class="ti ti-calendar"></i>
+    <span id="pageDate"></span>
+</div>
+
+<button class="pw-dark-toggle" id="pwDarkToggle" title="Toggle dark mode">
+    <i class="fa-solid fa-moon" style="font-size:14px"></i>
+</button>
+
+<div class="notif-wrap" id="notifWrap">
+<% if (isAdminPage) { %>
+    <!-- Admin bell: shows count badge, opens dropdown (same as student) -->
+    <button class="bell-btn" id="bellBtn" title="Notifications" onclick="<%= bellClickAction %>">
+        <i class="ti ti-bell"></i>
+        <% if (notificationCount > 0) { %>
+            <span class="notif-dot"><%= notificationCount %></span>
+        <% } %>
+    </button>
+<% } else { %>
+    <!-- Student bell: shows count badge, opens dropdown -->
+    <button class="bell-btn" id="bellBtn" title="Notifications" onclick="<%= bellClickAction %>">
+        <i class="fa-regular fa-bell"></i>
+        <% if (notificationCount > 0) { %>
+            <span class="notif-dot"><%= notificationCount %></span>
+        <% } %>
+    </button>
+<% } %>
+    <!-- Dropdown will be rendered by the page after this include -->
+
+<script>
+    // Initialize date display
+    if (document.getElementById('pageDate')) {
+        var now = new Date();
+        var opts = { month: 'short', day: '2-digit', year: 'numeric' };
+        document.getElementById('pageDate').textContent = now.toLocaleDateString('en-US', opts);
+    }
+</script>

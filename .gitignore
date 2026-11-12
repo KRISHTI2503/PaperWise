@@ -1,0 +1,48 @@
+# NetBeans build output
+build/
+dist/
+nbproject/private/
+nbproject/private/*
+
+# IDE files
+*.class
+*.jar
+*.war
+*.ear
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Firebase Configuration (SECURITY: Never commit these!)
+config/
+firebase-service-account.json
+firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+*service-account*.json
+firebase-config.json
+
+# Environment secrets (SECURITY: Never commit credentials!)
+.env
+.env.local
+.env.production
+*.properties
+!nbproject/project.properties
+!lib/nblibraries.properties
+
+# Local development config
+context.xml.local
+web/META-INF/context.xml.local
+
+# Uploaded files (use Supabase Storage in production)
+uploads/
+web/uploads/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
