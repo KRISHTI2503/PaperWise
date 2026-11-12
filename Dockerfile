@@ -1,47 +1,72 @@
 # Multi-stage build for PaperWise
-# Stage 1: Build the WAR file with Ant
+# Stage 1: Get Tomcat libs (servlet, JSP, EL, annotations, websocket APIs)
 FROM tomcat:10.1-jre17 AS tomcat-libs
 
-# Stage 2: Builder with JDK 17 and Tomcat classpath
+# Stage 2: Builder with JDK 17 and plain javac/jar build
 FROM eclipse-temurin:17-jdk AS builder
 
-# Set JAVA_HOME explicitly
-ENV JAVA_HOME=/opt/java/openjdk
-
-# Install Ant from Apache archive (avoid Java 25 from apt)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget && \
-    wget -q https://archive.apache.org/dist/ant/binaries/apache-ant-1.10.14-bin.tar.gz && \
-    tar -xzf apache-ant-1.10.14-bin.tar.gz -C /opt && \
-    rm apache-ant-1.10.14-bin.tar.gz && \
-    rm -rf /var/lib/apt/lists/*
-
-ENV ANT_HOME=/opt/apache-ant-1.10.14
-ENV PATH="${ANT_HOME}/bin:${PATH}"
-
-# Copy Tomcat from tomcat-libs stage to get servlet APIs
-COPY --from=tomcat-libs /usr/local/tomcat /usr/local/tomcat
-ENV TOMCAT_HOME=/usr/local/tomcat
+# Copy Tomcat API JARs for compilation classpath
+COPY --from=tomcat-libs /usr/local/tomcat/lib /tomcat-lib
 
 # Copy project files
 WORKDIR /build
 COPY . .
 
-# Build the classpath from Tomcat libs
-ENV J2EE_PLATFORM_CLASSPATH="${TOMCAT_HOME}/lib/servlet-api.jar:${TOMCAT_HOME}/lib/jsp-api.jar:${TOMCAT_HOME}/lib/el-api.jar:${TOMCAT_HOME}/lib/annotations-api.jar:${TOMCAT_HOME}/lib/tomcat-api.jar:${TOMCAT_HOME}/lib/websocket-api.jar"
+# Create WAR structure
+RUN mkdir -p /war/WEB-INF/classes /war/WEB-INF/lib
 
-# Build the WAR file using Ant with all required properties
-RUN ant \
-    -Dj2ee.server.home=${TOMCAT_HOME} \
-    -Dj2ee.platform.classpath=${J2EE_PLATFORM_CLASSPATH} \
-    -Dlibs.CopyLibs.classpath=/build/lib/CopyLibs/org-netbeans-modules-java-j2seproject-copylibstask.jar \
-    -Djavac.classpath=/build/lib/postgresql-42.7.10.jar:/build/web/WEB-INF/lib/jakarta.mail-2.0.1.jar:/build/web/WEB-INF/lib/gson-2.10.1.jar \
-    clean war
+# Copy web resources (JSPs, HTML, CSS, JS, etc.)
+RUN cp -r web/* /war/
 
-# Verify WAR contents
-RUN echo "=== Verifying WAR contents ===" && \
-    jar tf /build/dist/PaperWise_AJT.war | grep -E "(WEB-INF/classes/com/paperwise|WEB-INF/lib/postgresql|META-INF/context.xml)" && \
-    echo "=== WAR verification complete ==="
+# Copy application JARs to WEB-INF/lib (use wildcard to avoid breaking on missing files)
+RUN cp lib/*.jar /war/WEB-INF/lib/ 2>/dev/null || true
+
+# Build classpath for compilation (Tomcat APIs + application JARs)
+RUN TOMCAT_CP=$(find /tomcat-lib -name 'servlet-api.jar' -o -name 'jsp-api.jar' -o -name 'el-api.jar' -o -name 'annotations-api.jar' -o -name 'websocket-api.jar' | tr '\n' ':') && \
+    APP_CP=$(find lib -name '*.jar' 2>/dev/null | tr '\n' ':') && \
+    echo "Tomcat classpath: $TOMCAT_CP" && \
+    echo "App classpath: $APP_CP" && \
+    FULL_CP="${TOMCAT_CP}${APP_CP}" && \
+    echo "Full compile classpath: $FULL_CP" && \
+    # Compile all Java files
+    find src/java -name '*.java' > sources.txt && \
+    echo "=== Compiling Java sources ===" && \
+    cat sources.txt && \
+    javac --release 17 \
+          -encoding UTF-8 \
+          -d /war/WEB-INF/classes \
+          -cp "$FULL_CP" \
+          @sources.txt && \
+    echo "=== Compilation complete ===" && \
+    # Copy any non-Java resources from src/java (properties files, etc.)
+    find src/java -type f ! -name '*.java' ! -name '*.class' -exec cp --parents {} /war/WEB-INF/classes/ \; 2>/dev/null || true && \
+    # Count compiled classes
+    CLASS_COUNT=$(find /war/WEB-INF/classes -name '*.class' | wc -l) && \
+    echo "=== Compiled $CLASS_COUNT class files ===" && \
+    # Build the WAR file
+    cd /war && jar -cf /ROOT.war . && \
+    echo "=== WAR file created ===" && \
+    # Verify WAR contents
+    echo "=== Verifying WAR contents ===" && \
+    jar tf /ROOT.war | grep -E "(WEB-INF/classes/com/paperwise|WEB-INF/lib/postgresql|META-INF/context.xml)" > /verify.txt && \
+    # Check that compiled classes exist
+    if ! grep -q "WEB-INF/classes/com/paperwise" /verify.txt; then \
+        echo "ERROR: No compiled classes found in WAR!" && \
+        exit 1; \
+    fi && \
+    # Check that postgresql JAR exists
+    if ! grep -q "WEB-INF/lib/postgresql" /verify.txt; then \
+        echo "ERROR: PostgreSQL driver missing from WAR!" && \
+        exit 1; \
+    fi && \
+    # Check that context.xml exists
+    if ! grep -q "META-INF/context.xml" /verify.txt; then \
+        echo "ERROR: context.xml missing from WAR!" && \
+        exit 1; \
+    fi && \
+    echo "=== WAR verification complete ===" && \
+    echo "Compiled classes: $(grep 'WEB-INF/classes/com/paperwise.*\.class$' /verify.txt | wc -l)" && \
+    echo "PostgreSQL JAR: $(grep 'WEB-INF/lib/postgresql' /verify.txt)"
 
 # Stage 3: Runtime with Tomcat
 FROM tomcat:10.1-jre17
@@ -50,7 +75,7 @@ FROM tomcat:10.1-jre17
 RUN rm -rf /usr/local/tomcat/webapps/*
 
 # Copy the WAR file from builder stage and deploy as ROOT
-COPY --from=builder /build/dist/PaperWise_AJT.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=builder /ROOT.war /usr/local/tomcat/webapps/ROOT.war
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
