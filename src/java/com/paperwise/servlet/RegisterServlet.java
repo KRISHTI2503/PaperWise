@@ -170,7 +170,7 @@ public class RegisterServlet extends HttpServlet {
         }
 
         if (!hasSpecialChar(password)) {
-            return "Password must contain at least one special character (!@#$%^&*).";
+            return "Password must contain at least one special character (for example ! @ # $ % ^ & * _ -).";
         }
 
         if (!password.equals(confirmPassword)) {
@@ -193,7 +193,7 @@ public class RegisterServlet extends HttpServlet {
     }
 
     private boolean hasSpecialChar(String password) {
-        return password.matches(".*[!@#$%^&*].*");
+        return password.matches(".*[^A-Za-z0-9].*");
     }
 
     private boolean isValidEmail(String email) {

@@ -519,8 +519,8 @@
                         placeholder="Create a strong password"
                         required
                         minlength="8"
-                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$"
-                        title="Password must be at least 8 characters and contain: uppercase, lowercase, digit, and special character (!@#$%^&*)"
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+                        title="Password must be at least 8 characters and contain: uppercase, lowercase, digit, and special character (for example ! @ # $ % ^ & * _ -)"
                         autocomplete="new-password"
                     />
                     <button type="button" class="pwd-toggle"
@@ -529,7 +529,7 @@
                         <i id="icon1" class="fa-regular fa-eye"></i>
                     </button>
                 </div>
-                <p class="helper-text">At least 8 characters with uppercase, lowercase, digit, and special character (!@#$%^&amp;*)</p>
+                <p class="helper-text">At least 8 characters with uppercase, lowercase, digit, and special character (for example ! @ # $ % ^ &amp; * _ -)</p>
             </div>
 
             <!-- Confirm Password -->
