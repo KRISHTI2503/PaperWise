@@ -1,49 +1,59 @@
 # PaperWise
 
-An academic paper management system that allows admins to upload and manage exam papers, and students to browse, rate, bookmark, and request papers — all in one place.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Java Servlets (Jakarta EE 10) |
-| Frontend | JSP, HTML5, CSS3, JavaScript |
-| Database | PostgreSQL |
-| Server | Apache Tomcat 10.1 |
-| Architecture | MVC (Model-View-Controller) |
-| Connection Pooling | JNDI DataSource |
-| Icons | Font Awesome 6 (local), Tabler Icons (local) |
-| Build Tool | Apache Ant (NetBeans project) |
+A collaborative platform for students to browse, share, and request academic papers and study materials. Built with Jakarta EE 10, featuring role-based authentication, real-time difficulty voting, and cloud storage.
 
 ---
 
 ## Features
 
+### Authentication & Roles
+- **Role-based access control**: Admin and Student roles
+- **Session management**: Secure login/logout with session tracking
+- **Registration**: Students can self-register; admin accounts are created via database
+
 ### Admin Features
-- **Dashboard** — Overview of total papers, students, pending requests, and useful marks with stat cards
-- **Upload Papers** — Upload academic papers (PDF, DOC, DOCX, PPT, PPTX, TXT, images, video) with subject name, code, year, exam type, chapter, and description
-- **All Papers** — Browse, search, filter, edit, and delete all uploaded papers
-- **Edit Paper** — Update paper metadata (subject, year, exam type, chapter, description)
-- **Delete Paper** — Permanently remove a paper from the system
-- **Manage Requests** — View all student paper requests, update status (Pending / Completed / Rejected), and add admin messages
-- **Manage Students** — View all registered students with their usage statistics
-- **Analytics** — View difficulty distribution, papers by subject, most popular papers, and useful mark stats
-- **Comments** — Post, view, and delete comments on papers (admins can delete student comments; cannot delete other admin comments)
-- **Dark / Light Mode** — Persistent theme toggle saved in localStorage
+- **Upload Papers**: Upload PDFs and documents (max 20MB) to Supabase Storage
+- **Edit Papers**: Modify paper metadata (subject, year, chapter, exam type)
+- **Delete Papers**: Remove papers from database and storage
+- **Manage Requests**: View and respond to student paper requests
+- **Student Management**: View all registered students
+- **Analytics Dashboard**: Track upload trends, popular papers, and user activity
+- **Announcements**: Post announcements visible to all students
+- **Exam Schedule**: Create and manage exam schedules with edit capabilities
+- **Notifications**: Bell icon with real-time notification count
 
 ### Student Features
-- **Dashboard** — Overview of available papers, personal marks, and submitted requests
-- **All Papers** — Browse and filter all papers by subject, year, exam type, and difficulty
-- **Mark as Useful** — Bookmark papers as useful with a toggle; bookmarks are tracked per student
-- **My Marked Papers** — View all papers the student has bookmarked
-- **Difficulty Voting** — Rate each paper as Easy, Medium, or Hard; view community vote breakdown
-- **Comments & Replies** — Post comments on papers, reply to others' comments, and delete own comments
-- **Request a Paper** — Submit a request for a specific paper not yet uploaded
-- **Track Requests** — View request status and admin reply messages; delete pending/rejected requests
-- **Forgot Password** — OTP-based password reset via email (6-digit OTP, 10-minute expiry)
-- **Dark / Light Mode** — Persistent theme toggle
+- **Browse Papers**: View all available papers with filtering
+- **Advanced Filtering**: Filter by subject, year, exam type with clear filters button
+- **Mark as Useful**: Vote papers as useful (one vote per user)
+- **Live Difficulty Voting**: Vote Easy/Medium/Hard with real-time percentage updates
+- **Comments & Replies**: Threaded comments on papers
+- **Request Papers**: Submit requests for missing papers with edit and delete
+- **View Requests**: Track status of submitted requests
+- **Announcements**: View admin announcements
+- **Exam Schedule**: View upcoming exams with countdown timers
+- **Notifications**: Bell icon for paper upload notifications
+
+### UI/UX
+- **Dark and Light Mode**: Theme toggle with preference persistence
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Real-time Updates**: Difficulty stats update without page refresh
+- **Toast Notifications**: Non-intrusive success/error messages
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Jakarta EE 10, Java Servlets |
+| **Frontend** | JSP, HTML5, CSS3, JavaScript |
+| **Database** | PostgreSQL 14+ (Neon for production) |
+| **App Server** | Apache Tomcat 10.1 |
+| **Build Tool** | Apache Ant |
+| **Deployment** | Docker, Render (free tier) |
+| **File Storage** | Supabase Storage (private bucket) |
+| **Architecture** | MVC, JNDI DataSource |
 
 ---
 
@@ -52,223 +62,241 @@ An academic paper management system that allows admins to upload and manage exam
 ```
 PaperWise_AJT/
 ├── src/
-│   └── java/com/paperwise/
-│       ├── dao/          # Data Access Objects (DB queries)
-│       ├── filter/       # AuthFilter — session-based route protection
-│       ├── model/        # POJO models (User, Paper, PaperRequest, PaperComment, ...)
-│       ├── servlet/      # Jakarta Servlets (one per action)
-│       └── util/         # EmailService (OTP delivery via Gmail SMTP)
+│   ├── java/com/paperwise/
+│   │   ├── dao/              # Data Access Objects
+│   │   ├── filter/           # AuthFilter (role-based access)
+│   │   ├── model/            # POJOs (User, Paper, etc.)
+│   │   ├── servlet/          # Controllers
+│   │   └── util/             # SupabaseStorageService
+│   └── conf/                 # MANIFEST.MF
 ├── web/
-│   ├── css/              # paperwise.css — global design system
-│   ├── js/               # paperwise.js — theme toggle, shared utils
-│   ├── resources/
-│   │   ├── fontawesome/  # Font Awesome 6 (local, no CDN)
-│   │   ├── tabler-icons/ # Tabler Icons (local, no CDN)
-│   │   └── css/          # theme.css, layout.css, components.css, responsive.css
+│   ├── META-INF/             # context.xml (JNDI config)
 │   ├── WEB-INF/
-│   │   ├── web.xml       # Servlet config, error pages, JNDI resource ref
-│   │   └── views/        # Server-side-only JSPs (myMarked.jsp, uploadPaper.jsp)
-│   ├── META-INF/
-│   │   └── context.xml   # Tomcat JNDI DataSource config
-│   ├── login.jsp
-│   ├── register.jsp
-│   ├── forgotPassword.jsp
-│   ├── admin-dashboard.jsp
-│   ├── student-dashboard.jsp
-│   ├── allPapers.jsp
-│   ├── studentAllPapers.jsp
-│   ├── analytics.jsp
-│   ├── students.jsp
-│   ├── adminRequests.jsp
-│   ├── requestPaper.jsp
-│   ├── editPaper.jsp
-│   ├── upload.jsp
-│   ├── error404.jsp
-│   └── error500.jsp
-├── lib/
-│   └── postgresql-42.7.10.jar
-├── database_setup.sql    # Full DB schema
-└── build.xml             # Ant build file
+│   │   ├── views/            # JSP pages
+│   │   ├── includes/         # Reusable JSP fragments
+│   │   └── web.xml           # Deployment descriptor
+│   ├── resources/
+│   │   ├── css/              # Stylesheets
+│   │   ├── js/               # JavaScript
+│   │   ├── fontawesome/      # Icons
+│   │   └── tabler-icons/     # Icons
+│   ├── *.jsp                 # Main pages
+│   └── index.html            # Landing page
+├── database/
+│   ├── schema.sql            # Production database schema
+│   └── README.md             # Database setup instructions
+├── nbproject/                # NetBeans project files
+├── lib/                      # Libraries
+├── docs/                     # Documentation
+│   ├── DEPLOYMENT.md         # Deployment guide
+│   └── PRE_DEPLOYMENT_CHECKLIST.md
+├── .env.example              # Environment variables template
+├── .gitignore                # Git ignore rules
+├── build.xml                 # Ant build configuration
+├── Dockerfile                # Docker multi-stage build
+├── docker-entrypoint.sh      # Container entrypoint
+├── render.yaml               # Render deployment config
+├── test-docker-env.sh        # Docker test script (Bash)
+└── test-docker-env.ps1       # Docker test script (PowerShell)
 ```
 
 ---
 
-## How to Run
+## Local Development Setup
 
 ### Prerequisites
-- Java JDK 17+
-- Apache Tomcat 10.1
+- Java 17 or higher
+- Apache Tomcat 10.1+
 - PostgreSQL 14+
-- NetBeans IDE (recommended) or any IDE with Ant support
+- Apache Ant (for building)
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/KRISHTI2503/PaperWise.git
-cd PaperWise
-```
+### Steps
 
-### 2. Set up the PostgreSQL database
-```sql
--- Create the database
-CREATE DATABASE paperwise;
-```
-Then run the full schema:
-```bash
-psql -U postgres -d paperwise -f database_setup.sql
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/KRISHTI2503/PaperWise.git
+   cd PaperWise
+   ```
 
-### 3. Configure the JNDI DataSource
-Edit `web/META-INF/context.xml` with your PostgreSQL credentials:
-```xml
-<Resource name="jdbc/paperwise"
-          auth="Container"
-          type="javax.sql.DataSource"
-          driverClassName="org.postgresql.Driver"
-          url="jdbc:postgresql://localhost:5432/paperwise"
-          username="YOUR_DB_USER"
-          password="YOUR_DB_PASSWORD"
-          maxTotal="20"
-          maxIdle="10"
-          maxWaitMillis="10000"/>
-```
+2. **Set up the database**
+   ```bash
+   # Create database
+   createdb paperwise
+   
+   # Run schema
+   psql -d paperwise -f database/schema.sql
+   
+   # Set admin password (replace with your password)
+   psql -d paperwise -c "UPDATE users SET password = 'admin123' WHERE username = 'admin'"
+   ```
 
-### 4. Configure Tomcat in NetBeans
-- Go to **Tools → Servers → Add Server → Apache Tomcat 10.1**
-- Point it to your Tomcat installation directory
-- Ensure the PostgreSQL JDBC driver JAR is in `lib/`
+3. **Configure environment variables**
+   
+   Copy `.env.example` to create your local configuration, then set environment variables:
 
-### 5. (Optional) Configure OTP email for Forgot Password
-Edit `src/java/com/paperwise/util/EmailService.java`:
-```java
-private static final String FROM_EMAIL  = "your.gmail@gmail.com";
-private static final String APP_PASSWORD = "your-16-char-app-password";
-```
-Use a Gmail App Password (not your account password).
+   **Option A: Set in your IDE/Tomcat configuration**
+   - `JDBC_URL=jdbc:postgresql://localhost:5432/paperwise?sslmode=prefer`
+   - `JDBC_USERNAME=postgres`
+   - `JDBC_PASSWORD=your_password`
+   - `SUPABASE_URL=` (leave empty for local dev)
+   - `SUPABASE_KEY=` (leave empty)
+   - `SUPABASE_BUCKET=` (leave empty)
+   - `APP_ENV=local`
 
-### 6. Create the uploads directory
-```bash
-mkdir C:/paperwise_uploads
-```
-This is where uploaded paper files are stored.
+   **Option B: Set via command line (for Tomcat startup)**
+   
+   Windows PowerShell:
+   ```powershell
+   $env:APP_ENV="local"
+   $env:JDBC_URL="jdbc:postgresql://localhost:5432/paperwise?sslmode=prefer"
+   # ... set other variables
+   # Then start Tomcat
+   ```
 
-### 7. Build and run
-In NetBeans: **Right-click project → Clean and Build**, then **Run**.
+   Linux/Mac:
+   ```bash
+   export APP_ENV=local
+   export JDBC_URL=jdbc:postgresql://localhost:5432/paperwise?sslmode=prefer
+   # ... set other variables
+   # Then start Tomcat
+   ```
 
-The application will be available at:
-```
-http://localhost:8080/PaperWise_AJT/
-```
+4. **Update context.xml for local development**
+   
+   Copy `web/META-INF/context.xml.example` to `web/META-INF/context.xml` and adjust if needed for your local setup.
+
+5. **Build the project**
+   ```bash
+   ant clean war
+   ```
+
+6. **Deploy to Tomcat**
+   - Copy `dist/PaperWise_AJT.war` to Tomcat's `webapps/` directory
+   - Or deploy through your IDE (NetBeans, IntelliJ, Eclipse)
+
+7. **Access the application**
+   - Open http://localhost:8080/PaperWise_AJT
+   - Login as admin: `admin` / `admin123` (or your set password)
+
+### Local File Storage
+
+When `APP_ENV=local`:
+- Files are stored in `web/uploads/` folder (gitignored)
+- No Supabase configuration needed
+- Automatic fallback if Supabase is unavailable
 
 ---
 
-## Database Tables
+## Production Deployment
 
-| Table | Description |
-|---|---|
-| `users` | Stores registered users with username, email, hashed password, and role (`admin` / `student`) |
-| `papers` | Stores uploaded paper metadata — subject, code, year, exam type, chapter, description, file path |
-| `votes` | Tracks which students have marked which papers as useful (many-to-many) |
-| `difficulty_votes` | Stores per-student difficulty ratings for each paper (`easy`, `medium`, `hard`) — one vote per user per paper, upsertable |
-| `paper_requests` | Student requests for papers not yet uploaded — includes status, admin reply message |
-| `paper_comments` | Comments and threaded replies on papers — stores parent_comment_id for reply nesting |
-| `password_reset_tokens` | OTP tokens for the forgot-password flow — includes expiry timestamp |
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for complete instructions on deploying to Render with Docker, Neon Postgres, and Supabase Storage.
+
+**Quick summary**:
+1. Create Neon database and run `database/schema.sql`
+2. Create private Supabase Storage bucket
+3. Set 7 environment variables in Render
+4. Connect GitHub repository
+5. Deploy with Docker runtime
+
+---
+
+## Security
+
+### Implemented Security Features
+
+✅ **SQL Injection Prevention**
+- All database queries use `PreparedStatement`
+- User input is parameterized, never concatenated into SQL
+
+✅ **Role-Based Access Control**
+- `AuthFilter` enforces authentication on all protected routes
+- Admin-only and student-only resources are separated
+- Session-based authentication with role checking
+
+✅ **Session Management**
+- Secure session handling with timeout
+- Logout clears session data
+- CSRF protection through session validation
+
+✅ **File Upload Security**
+- File type validation (PDF, DOC, DOCX, PPT, PPTX, TXT, JPG, PNG only)
+- File size limit (20MB max)
+- Server-side validation in addition to client-side
+
+✅ **Private File Storage**
+- Supabase Storage bucket set to private
+- Files accessed via signed URLs (1-hour expiry)
+- No direct public access to uploaded files
+
+✅ **Environment-Based Configuration**
+- All secrets in environment variables
+- No hardcoded credentials
+- Production mode enforces cloud storage only
+
+✅ **Secure Database Connection**
+- Connection pooling via JNDI DataSource
+- SSL/TLS for production database (sslmode=require)
+- Credentials never logged or exposed
+
+### Known Security Limitations
+
+⚠️ **Passwords Stored as Plain Text**
+- Current implementation stores passwords without hashing
+- **THIS IS A CRITICAL SECURITY ISSUE**
+- **Action Required**: Implement bcrypt password hashing immediately after deployment
+- This is the #1 priority for post-deployment security improvements
+
+⚠️ **No Rate Limiting**
+- Login attempts are not rate-limited
+- Consider adding rate limiting for production
+
+⚠️ **No HTTPS Enforcement in Code**
+- Relies on Render's HTTPS termination
+- Consider adding HSTS headers
+
+---
+
+## Environment Variables
+
+Required for deployment:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `JDBC_URL` | Database connection URL | `jdbc:postgresql://host.neon.tech/db?sslmode=require` |
+| `JDBC_USERNAME` | Database username | `neondb_owner` |
+| `JDBC_PASSWORD` | Database password | `abc123xyz` |
+| `SUPABASE_URL` | Supabase project URL | `https://xxxxx.supabase.co` |
+| `SUPABASE_KEY` | Supabase service_role key | `eyJhbGc...` |
+| `SUPABASE_BUCKET` | Storage bucket name | `paperwise-files` |
+| `APP_ENV` | Environment mode | `local` or `production` |
+
+See `.env.example` for a template.
 
 ---
 
 ## Screenshots
 
-> Screenshots will be added soon.
+*Screenshots will be added here*
 
----
+### Admin Dashboard
+![Admin Dashboard](screenshots/admin-dashboard.png)
 
-## Author
+### Student Dashboard
+![Student Dashboard](screenshots/student-dashboard.png)
 
-**KRISHTI2503** — [github.com/KRISHTI2503](https://github.com/KRISHTI2503)
+### Paper Browser with Filters
+![Paper Browser](screenshots/paper-browser.png)
 
----
-
-## Deployment
-
-PaperWise is deployed on **Render** (Docker) with:
-- **Database**: Neon Postgres (free tier)
-- **File Storage**: Supabase Storage (private bucket)
-- **Health Check**: `/health` endpoint
-
-### Quick Start
-
-See **[DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment instructions.
-
-### Environment Variables
-
-Required for production:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `JDBC_URL` | Neon Postgres connection string | `jdbc:postgresql://host.neon.tech:5432/db?sslmode=require` |
-| `JDBC_USERNAME` | Database username | `your-username` |
-| `JDBC_PASSWORD` | Database password | `your-password` |
-| `SUPABASE_URL` | Supabase project URL | `https://xxxxx.supabase.co` |
-| `SUPABASE_KEY` | Supabase service_role key (server-side only) | `eyJhbGc...` |
-| `SUPABASE_BUCKET` | Storage bucket name | `paperwise-files` |
-| `APP_ENV` | Environment mode | `production` or `local` |
-
-### Local Development
-
-1. Copy `.env.example` to `.env`
-2. Set `APP_ENV=local`
-3. Leave Supabase vars empty (uses local `uploads/` folder)
-4. Configure local PostgreSQL in `.env`
-5. Run with Tomcat 10.1+
-
----
-
-## Security Notes
-
-### ✓ Implemented
-- No hardcoded secrets
-- Environment-based configuration
-- Bcrypt password hashing
-- JNDI DataSource (connection pooling)
-- HTTPS-only for database (sslmode=require)
-- Private Supabase bucket with signed URLs
-- File size limits (20MB)
-- File type validation
-- SQL injection prevention (PreparedStatements)
-- Session management
-
-### ⚠️ Firebase Cleanup Required
-The repository previously contained a Firebase service account key that was committed to git history. This key has been removed from the codebase but **MUST be revoked** in the Firebase console:
-
-- Key ID: `e07d4c5551f8547fd55cb94fde2c6819d736399c`
-- Action: Go to Firebase Console → Settings → Service Accounts → Revoke this key
-
-Firebase authentication code exists in `UserDAO` but is unused (dead code).
-
----
-
-## Architecture
-
-### File Storage Strategy
-- **Production** (`APP_ENV=production`): Supabase Storage only, no local fallback
-- **Local** (`APP_ENV=local`): Falls back to local `uploads/` folder if Supabase unavailable
-
-### Database Schema
-See `database/schema.sql` for complete schema. Key tables:
-- `users` - Admin and student accounts
-- `papers` - Uploaded documents
-- `votes` - Usefulness voting
-- `difficulty_votes` - Difficulty ratings
-- `paper_requests` - Student requests for papers
-- `notifications` - User notifications
-
-**Note**: Firebase-related columns (`firebase_uid`, `auth_provider`) are excluded from production schema as they are unused.
+### Dark Mode
+![Dark Mode](screenshots/dark-mode.png)
 
 ---
 
 ## Testing
 
 ### Docker Build Test
-To verify environment variable injection:
+
+Test that environment variables are properly injected:
 
 **Windows**:
 ```powershell
@@ -281,7 +309,35 @@ chmod +x test-docker-env.sh
 ./test-docker-env.sh
 ```
 
-This tests that NO `${...}` placeholders reach the Java code.
+This verifies that NO `${...}` placeholders reach the Java code.
+
+---
+
+## Contributing
+
+This is an academic project. If you find issues or want to suggest improvements:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+## Future Improvements
+
+Planned features and improvements:
+
+1. **Password Hashing**: Implement bcrypt (CRITICAL)
+2. **Email Notifications**: OTP verification, password reset
+3. **Advanced Search**: Full-text search across papers
+4. **Paper Preview**: PDF preview without download
+5. **User Profiles**: Student profiles with stats
+6. **Bookmarks**: Save favorite papers
+7. **Rate Limiting**: Prevent abuse
+8. **Audit Logging**: Track admin actions
+9. **Backup System**: Automated database backups
+10. **Mobile App**: Native mobile client
 
 ---
 
@@ -293,6 +349,10 @@ Proprietary - Academic Project
 
 ## Support
 
-- Repository: https://github.com/KRISHTI2503/PaperWise
-- Deployment Guide: [DEPLOYMENT.md](DEPLOYMENT.md)
-- Database Setup: [database/README.md](database/README.md)
+- **Repository**: https://github.com/KRISHTI2503/PaperWise
+- **Documentation**: See `docs/` folder
+- **Issues**: Report bugs via GitHub Issues
+
+---
+
+**Built with ❤️ for students**
