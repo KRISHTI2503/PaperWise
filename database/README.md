@@ -5,19 +5,12 @@
 `schema.sql` - Complete database schema for production deployment on Neon Postgres
 
 ### What's Included:
-- Users table (admin and student roles)
-- Papers table (uploaded documents)
-- Votes table (usefulness voting)
-- Difficulty votes table
-- Paper requests table
-- Notifications table
-- All necessary indexes
-- Foreign key constraints
-
-### What's Excluded:
-- `firebase_uid` column - Firebase authentication methods are defined in code but never called
-- `auth_provider` column - Related to Firebase, not used in production
-- These columns exist in the local database for legacy compatibility but are not needed for deployment
+- **10 tables**: announcements, difficulty_votes, exam_schedule, marks, notifications, paper_comments, paper_requests, papers, users, votes
+- Users table with admin and student roles
+- Firebase columns (`firebase_uid`, `auth_provider`) - present in production database but unused by the application
+- All sequences for auto-increment IDs
+- All necessary indexes and constraints
+- Foreign key relationships with cascade deletes
 
 ## Setup Instructions
 
