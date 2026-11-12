@@ -848,11 +848,22 @@ function showToast(message, type, duration) {
     warning: 'ti-alert-triangle'
   };
 
-  toast.innerHTML =
-    '<i class="ti ' + icons[type] + ' pw-toast-icon"></i>' +
-    '<span class="pw-toast-msg">' + message + '</span>' +
-    '<button type="button" class="pw-toast-close" onclick="this.closest(\'.pw-toast\').remove()">' +
-    '<i class="ti ti-x"></i></button>';
+  const icon = document.createElement('i');
+  icon.className = 'ti ' + icons[type] + ' pw-toast-icon';
+  
+  const msgSpan = document.createElement('span');
+  msgSpan.className = 'pw-toast-msg';
+  msgSpan.textContent = message;
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'pw-toast-close';
+  closeBtn.onclick = function() { this.closest('.pw-toast').remove(); };
+  closeBtn.innerHTML = '<i class="ti ti-x"></i>';
+  
+  toast.appendChild(icon);
+  toast.appendChild(msgSpan);
+  toast.appendChild(closeBtn);
 
   container.appendChild(toast);
 
@@ -899,7 +910,7 @@ window.addEventListener('load', function() {
   const customMsg = p.get('msg');
   const customType = p.get('msgType') || 'info';
   if (customMsg) {
-    showToast(decodeURIComponent(customMsg), customType);
+    showToast(customMsg, customType);
   }
 });
 </script>
