@@ -7,58 +7,90 @@ set -e
 echo "=== PaperWise Startup ==="
 echo "Setting up Tomcat environment..."
 
+# Function to clean environment variable values
+# Strips leading/trailing whitespace, \r, \n, and one pair of surrounding quotes
+clean_env_var() {
+    local value="$1"
+    
+    # Strip leading/trailing whitespace, tabs, \r, \n
+    value=$(echo "$value" | sed -e 's/^[[:space:]\r\n]*//' -e 's/[[:space:]\r\n]*$//')
+    
+    # Strip one pair of surrounding quotes (single or double)
+    if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+    fi
+    
+    echo "$value"
+}
+
 # Build CATALINA_OPTS with all required environment variables as system properties
 # Tomcat's ${...} in context.xml reads Java system properties, NOT environment variables
 CATALINA_OPTS="${CATALINA_OPTS:-}"
 
+# Clean all environment variables
+JDBC_URL_CLEAN=$(clean_env_var "${JDBC_URL:-}")
+JDBC_USERNAME_CLEAN=$(clean_env_var "${JDBC_USERNAME:-}")
+JDBC_PASSWORD_CLEAN=$(clean_env_var "${JDBC_PASSWORD:-}")
+SUPABASE_URL_CLEAN=$(clean_env_var "${SUPABASE_URL:-}")
+SUPABASE_KEY_CLEAN=$(clean_env_var "${SUPABASE_KEY:-}")
+SUPABASE_BUCKET_CLEAN=$(clean_env_var "${SUPABASE_BUCKET:-}")
+APP_ENV_CLEAN=$(clean_env_var "${APP_ENV:-}")
+
 # Database configuration
-if [ -n "$JDBC_URL" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_URL=$JDBC_URL"
-    echo "✓ JDBC_URL configured"
+if [ -n "$JDBC_URL_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_URL=$(printf '%q' "$JDBC_URL_CLEAN")"
+    echo "✓ JDBC_URL configured (length: ${#JDBC_URL_CLEAN})"
 else
     echo "✗ WARNING: JDBC_URL not set"
 fi
 
-if [ -n "$JDBC_USERNAME" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_USERNAME=$JDBC_USERNAME"
-    echo "✓ JDBC_USERNAME configured"
+if [ -n "$JDBC_USERNAME_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_USERNAME=$(printf '%q' "$JDBC_USERNAME_CLEAN")"
+    echo "✓ JDBC_USERNAME configured (length: ${#JDBC_USERNAME_CLEAN})"
 else
     echo "✗ WARNING: JDBC_USERNAME not set"
 fi
 
-if [ -n "$JDBC_PASSWORD" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_PASSWORD=***"
-    echo "✓ JDBC_PASSWORD configured (hidden)"
+# Check if password was modified by cleaning
+JDBC_PASSWORD_ORIGINAL="${JDBC_PASSWORD:-}"
+JDBC_PASSWORD_CHANGED="no"
+if [ "$JDBC_PASSWORD_ORIGINAL" != "$JDBC_PASSWORD_CLEAN" ]; then
+    JDBC_PASSWORD_CHANGED="yes"
+fi
+
+if [ -n "$JDBC_PASSWORD_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DJDBC_PASSWORD=$(printf '%q' "$JDBC_PASSWORD_CLEAN")"
+    echo "✓ JDBC_PASSWORD configured (length: ${#JDBC_PASSWORD_CLEAN}, changed: $JDBC_PASSWORD_CHANGED)"
 else
     echo "✗ WARNING: JDBC_PASSWORD not set"
 fi
 
 # Supabase Storage configuration
-if [ -n "$SUPABASE_URL" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_URL=$SUPABASE_URL"
-    echo "✓ SUPABASE_URL configured"
+if [ -n "$SUPABASE_URL_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_URL=$(printf '%q' "$SUPABASE_URL_CLEAN")"
+    echo "✓ SUPABASE_URL configured (length: ${#SUPABASE_URL_CLEAN})"
 else
     echo "✗ WARNING: SUPABASE_URL not set"
 fi
 
-if [ -n "$SUPABASE_KEY" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_KEY=***"
-    echo "✓ SUPABASE_KEY configured (hidden)"
+if [ -n "$SUPABASE_KEY_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_KEY=$(printf '%q' "$SUPABASE_KEY_CLEAN")"
+    echo "✓ SUPABASE_KEY configured (length: ${#SUPABASE_KEY_CLEAN})"
 else
     echo "✗ WARNING: SUPABASE_KEY not set"
 fi
 
-if [ -n "$SUPABASE_BUCKET" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_BUCKET=$SUPABASE_BUCKET"
-    echo "✓ SUPABASE_BUCKET configured"
+if [ -n "$SUPABASE_BUCKET_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DSUPABASE_BUCKET=$(printf '%q' "$SUPABASE_BUCKET_CLEAN")"
+    echo "✓ SUPABASE_BUCKET configured (length: ${#SUPABASE_BUCKET_CLEAN})"
 else
     echo "✗ WARNING: SUPABASE_BUCKET not set"
 fi
 
 # Application environment (production/local)
-if [ -n "$APP_ENV" ]; then
-    CATALINA_OPTS="$CATALINA_OPTS -DAPP_ENV=$APP_ENV"
-    echo "✓ APP_ENV=$APP_ENV"
+if [ -n "$APP_ENV_CLEAN" ]; then
+    CATALINA_OPTS="$CATALINA_OPTS -DAPP_ENV=$(printf '%q' "$APP_ENV_CLEAN")"
+    echo "✓ APP_ENV=$APP_ENV_CLEAN (length: ${#APP_ENV_CLEAN})"
 else
     # Default to production in container
     CATALINA_OPTS="$CATALINA_OPTS -DAPP_ENV=production"
